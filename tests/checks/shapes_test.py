@@ -1,18 +1,19 @@
 import dataclasses
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import pytest
 
 from eincheck.checks.shapes import check_shapes
+from eincheck.parser.dim_spec import DimSpec
 from eincheck.parser.grammar import ShapeArg
 from eincheck.types import ShapeVariable
-from tests.utils import arr, raises_literal
+from tests.utils import Dummy, raises_literal
 
 
 @dataclasses.dataclass(frozen=True)
 class _TestCase:
-    args: List[Tuple[Tuple[int, ...], ShapeArg]]
-    kwargs: Dict[str, Tuple[Tuple[int, ...], ShapeArg]] = dataclasses.field(
+    args: List[Tuple[Sequence[Optional[int]], ShapeArg]]
+    kwargs: Dict[str, Tuple[Sequence[Optional[int]], ShapeArg]] = dataclasses.field(
         default_factory=dict
     )
     out_bindings: Dict[str, ShapeVariable] = dataclasses.field(default_factory=dict)
@@ -74,30 +75,36 @@ TEST_CASES = [
     ),
     _TestCase(
         [((2, 1), "*i"), ((3, 4), "i j")],
-        error="arg1: expected non-variadic DimSpec i to evaluate to an integer, "
-        "got (2, 1)",
+        error="Found variables in both variadic and non-variadic expressions: i",
     ),
     _TestCase(
         [((3, 4), "i j"), ((2, 1), "*i")],
-        error="arg1: expected variadic DimSpec *i to evaluate to a tuple, got 3",
+        error="Found variables in both variadic and non-variadic expressions: i",
     ),
     _TestCase(
         [((2, 1), "*i"), ((3, 3), "i*")],
-        error="arg1: expected non-variadic DimSpec i* to evaluate to an integer, "
-        "got (2, 1)",
+        error="Found variables in both variadic and non-variadic expressions: i",
     ),
     _TestCase(
         [((3, 3), "i*"), ((2, 1), "*i")],
-        error="arg1: expected variadic DimSpec *i to evaluate to a tuple, got 3",
+        error="Found variables in both variadic and non-variadic expressions: i",
     ),
-    # _TestCase(
-    #     [((3, 3), "i *j"), ((2, 1), "*(i || j)")],
-    #     error="arg1: expected variadic DimSpec *i to evaluate to a tuple, got 3",
-    # ),
-    # _TestCase(
-    #     [((3, 3), "i *j"), ((2, 1), "*(i + j)")],
-    #     error="arg1: expected variadic DimSpec *(i to evaluate to a tuple, got 3",
-    # ),
+    _TestCase(
+        [((3, 3), "i *j"), ((2, 1), "*(i || j)")],
+        error="Found variables in both variadic and non-variadic expressions: i",
+    ),
+    _TestCase(
+        [((3, 3), "*i j"), ((2, 1), "*(i + j)")],
+        error="Found variables in both variadic and non-variadic expressions: j",
+    ),
+    _TestCase(
+        [((3, 3, 4), "(i || j)"), ((3, 3), "*i"), ((4,), "*j")],
+        error="Found variables in both variadic and non-variadic expressions: i j",
+    ),
+    _TestCase(
+        [((3, 3, 4), "*(i + j)"), ((3, 3), "*i"), ((4,), "*j")],
+        error="Expected int for i in (i+j), got (3, 3)",
+    ),
     _TestCase([((), "a*")]),
     _TestCase([((), "a*"), ((7, 7), "a*")], out_bindings={"a": 7}),
     _TestCase([((3,), "i a*")], out_bindings={"i": 3}),
@@ -108,13 +115,23 @@ TEST_CASES = [
         in_bindings={"i": 2},
         error="arg0 dim 0: expected i=2 got 3",
     ),
+    _TestCase(
+        [
+            ((None, 16, 16), [None, DimSpec.create_variable("i"), "i"]),
+            ((1, None, 16, 16), "1 _ i*"),
+            ((7, None, None, None, 16), "7 ... i"),
+            ((8, None, None, None, 16), "8 _* i"),
+            ((9, None, None, None, 16), "9 *_ i"),
+        ],
+        out_bindings={"i": 16},
+    ),
 ]
 
 
 @pytest.mark.parametrize("case", TEST_CASES)
 def test_simple(case: _TestCase) -> None:
-    args = [(arr(*x), y) for x, y in case.args]
-    kwargs = {k: (arr(*x), y) for k, (x, y) in case.kwargs.items()}
+    args = [(Dummy(x), y) for x, y in case.args]
+    kwargs = {k: (Dummy(x), y) for k, (x, y) in case.kwargs.items()}
     if case.error:
         with raises_literal(case.error):
             check_shapes(*args, **kwargs, **case.in_bindings)

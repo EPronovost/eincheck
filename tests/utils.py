@@ -1,5 +1,5 @@
 import re
-from typing import Type
+from typing import Any, Optional, Sequence, Type
 
 import _pytest.python_api
 import numpy as np
@@ -16,3 +16,9 @@ def raises_literal(
 def arr(*dims: int) -> npt.NDArray[np.float64]:
     """Create a random numpy array with the given dimensions."""
     return np.array(np.random.randn(*dims), dtype=np.float64)
+
+
+class Dummy:
+    def __init__(self, shape: Sequence[Optional[int]], **kwargs: Any):
+        self.shape = tuple(shape)
+        self.__dict__.update(kwargs)

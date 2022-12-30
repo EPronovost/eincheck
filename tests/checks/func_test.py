@@ -7,12 +7,7 @@ from typing_extensions import Protocol
 
 from eincheck.checks.func import check_func
 from eincheck.types import _ShapeType
-from tests.utils import arr, raises_literal
-
-
-class Dummy:
-    def __init__(self, **kwargs: Any):
-        self.__dict__.update(kwargs)
+from tests.utils import Dummy, arr, raises_literal
 
 
 def test_single_arg() -> None:

@@ -143,7 +143,20 @@ def check_shapes(
     *args: Tuple[Tensor, ShapeArg],
     **kwargs: Union[ShapeVariable, Tuple[Tensor, ShapeArg]],
 ) -> Dict[str, ShapeVariable]:
+    """Check the shapes of Tensors against ShapeArg specifications.
+
+    Examples:
+    ```
+    check_shapes((x, "... i j"), (y, "... j k"))
+    ```
+
+    ```
+    check_shapes(x=(x, "*batch t 3"), y=(y, ["*batch", ..., 3]), batch=(8, 2))
+    ```
+    """
     tensors, bindings = _get_tensors_and_bindings(*args, **kwargs)
+    _check_variable_types(tensors, bindings)
+
     if not tensors:
         return bindings
 
@@ -182,6 +195,45 @@ def check_shapes(
         raise ValueError(f"Unable to determine bindings for {unchecked}\n{msg}")
 
     return bindings
+
+
+def _check_variable_types(
+    tensors: Dict[str, Tuple[Tuple[Optional[int], ...], ShapeSpec]],
+    bindings: Dict[str, ShapeVariable],
+) -> None:
+    """Check that each variable is either an int or a tuple.
+
+    Categorizes each variable present in the ShapeSpec and bindings as being either an
+    int or a tuple.
+
+    If any variables are in both sets, raises an error.
+    """
+
+    int_vars = set()
+    tuple_vars = set()
+
+    for k, v in bindings.items():
+        if isinstance(v, int):
+            int_vars.add(k)
+        else:
+            tuple_vars.add(k)
+
+    for _, spec in tensors.values():
+        for dim in spec.dims:
+            if not dim.value:
+                continue
+
+            if dim.type is DimType.VARIADIC:
+                tuple_vars.update(dim.value.variables)
+            else:
+                int_vars.update(dim.value.variables)
+
+    both = int_vars & tuple_vars
+    if both:
+        raise ValueError(
+            "Found variables in both variadic and non-variadic expressions: "
+            + " ".join(sorted(both))
+        )
 
 
 def _check_rank(

@@ -1,6 +1,6 @@
 import operator
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Collection, Dict, Generic, Tuple, TypeVar
+from typing import Any, Callable, Collection, Dict, Generic, Set, Tuple, TypeVar
 
 from eincheck.types import ShapeVariable
 
@@ -16,9 +16,14 @@ class Expr(ABC):
     def eval(self, values: Dict[str, ShapeVariable]) -> ShapeVariable:
         """Evaluate the expression given existing values."""
 
+    @property
     @abstractmethod
+    def variables(self) -> Set[str]:
+        """The set of variables used for this expression."""
+
     def is_defined(self, values: Collection[str]) -> bool:
         """Whether all the necessary variables are defined."""
+        return self.variables <= set(values)
 
 
 class Literal(Expr):
@@ -33,8 +38,9 @@ class Literal(Expr):
     def eval(self, values: Dict[str, ShapeVariable]) -> ShapeVariable:
         return self.x
 
-    def is_defined(self, values: Collection[str]) -> bool:
-        return True
+    @property
+    def variables(self) -> Set[str]:
+        return set()
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, Literal) and o.x == self.x
@@ -50,8 +56,9 @@ class Variable(Expr):
     def eval(self, values: Dict[str, ShapeVariable]) -> ShapeVariable:
         return values[self.x]
 
-    def is_defined(self, values: Collection[str]) -> bool:
-        return self.x in values
+    @property
+    def variables(self) -> Set[str]:
+        return {self.x}
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, Variable) and o.x == self.x
@@ -85,14 +92,21 @@ class _BinaryOp(Expr, Generic[_T]):
         x = self.x.eval(values)
         y = self.y.eval(values)
         if not isinstance(x, self.expected_type):
-            raise ValueError(f"Expected {self.expected_type} for {self.x}, got {x}")
+            raise ValueError(
+                f"Expected {self.expected_type.__name__} for {self.x} in {self}, "
+                f"got {x}"
+            )
         if not isinstance(y, self.expected_type):
-            raise ValueError(f"Expected {self.expected_type} for {self.y}, got {y}")
+            raise ValueError(
+                f"Expected {self.expected_type.__name__} for {self.y} in {self}, "
+                f"got {y}"
+            )
 
         return self.func(x, y)
 
-    def is_defined(self, values: Collection[str]) -> bool:
-        return self.x.is_defined(values) and self.y.is_defined(values)
+    @property
+    def variables(self) -> Set[str]:
+        return self.x.variables | self.y.variables
 
 
 class _ScalarBinaryOp(_BinaryOp[int]):
