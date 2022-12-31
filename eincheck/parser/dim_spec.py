@@ -4,7 +4,7 @@ import dataclasses
 import enum
 from typing import Collection, Dict, Optional, Union
 
-from eincheck.parser.expressions import Expr, Literal, Variable
+from eincheck.parser.expressions import DataExpr, Expr, Literal, Variable
 from eincheck.types import ShapeVariable
 
 
@@ -65,6 +65,10 @@ class DimSpec:
     def create(x: Union[DimSpec, int, str, None]) -> DimSpec:
         if isinstance(x, DimSpec):
             return x
+        elif x == "$":
+            return DimSpec(DataExpr())
+        elif x == "_":
+            return DimSpec(None)
         elif isinstance(x, str) and x.isdigit():
             return DimSpec.create_literal(int(x))
         elif isinstance(x, str):
@@ -74,7 +78,7 @@ class DimSpec:
         elif x is None:
             return DimSpec(None)
         else:
-            raise ValueError(f"Unexpected type {type(x)}")
+            raise ValueError(f"Unexpected type: {type(x).__name__}")
 
     def is_defined(self, values: Collection[str]) -> bool:
         if self.value is None:

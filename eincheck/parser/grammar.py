@@ -4,7 +4,15 @@ from lark.lark import Lark
 from lark.visitors import Transformer
 
 from eincheck.parser.dim_spec import DimSpec, DimType
-from eincheck.parser.expressions import AddOp, BroadcastOp, ConcatOp, Expr, MulOp, SubOp
+from eincheck.parser.expressions import (
+    AddOp,
+    BroadcastOp,
+    ConcatOp,
+    DataExpr,
+    Expr,
+    MulOp,
+    SubOp,
+)
 from eincheck.parser.shape_spec import ShapeSpec
 
 ShapeArg = Union[str, ShapeSpec, Sequence[Union[DimSpec, str, int, None]]]
@@ -12,6 +20,7 @@ ShapeArg = Union[str, ShapeSpec, Sequence[Union[DimSpec, str, int, None]]]
 grammar = r"""
 
 shape : dim? (" "+ dim)*
+      | "$" -> dollar
 
 ?expr : INT   -> int
       | WORD  -> word
@@ -85,6 +94,9 @@ class TreeToSpec(Transformer):  # type: ignore[type-arg]
 
     def shape(self, dims: Sequence[DimSpec]) -> ShapeSpec:
         return ShapeSpec(list(dims))
+
+    def dollar(self, s: Any) -> ShapeSpec:
+        return ShapeSpec([DimSpec(DataExpr())])
 
     @staticmethod
     def _get_expr(x: Any) -> Expr:

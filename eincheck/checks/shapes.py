@@ -1,7 +1,7 @@
-from typing import Dict, Optional, Tuple, Union, cast
+from typing import Any, Dict, Optional, Tuple, Union, cast
 
 from eincheck.parser.dim_spec import DimSpec, DimType
-from eincheck.parser.expressions import Variable
+from eincheck.parser.expressions import DataExpr, Variable
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
 from eincheck.parser.shape_spec import ShapeSpec
 from eincheck.types import ShapeVariable, Tensor
@@ -74,7 +74,7 @@ def _bind_shape(
         g_slice = got_shape[start_idx:end_idx]
         if None in g_slice:
             raise ValueError(
-                f"{name}: tried to assign {g_slice} to {d}, found None{msg}"
+                f"{name}: tried to match {g_slice} to {d}, found None{msg}"
             )
 
         g_slice = cast(Tuple[int, ...], g_slice)
@@ -128,8 +128,13 @@ def _check_shape(
 
         g_slice = got_shape[start_idx:end_idx]
         if None in g_slice:
+            inds = (
+                f"dim {start_idx}"
+                if end_idx == start_idx + 1
+                else f"dims {tuple(range(start_idx, end_idx))}"
+            )
             raise ValueError(
-                f"{name} tried to check shape {d} against {g_slice}, found None{msg}"
+                f"{name} {inds}: tried to check {d} against {g_slice}, found None{msg}"
             )
 
         _check_dim_spec(
@@ -269,9 +274,7 @@ def _get_tensors_and_bindings(
     tensors: Dict[str, Tuple[Tuple[Optional[int], ...], ShapeSpec]] = {}
 
     for idx, (a_tensor, a_shape) in enumerate(args):
-        s = get_shape(a_tensor)
-        if s is not None:
-            tensors[f"arg{idx}"] = (s, create_shape_spec(a_shape))
+        tensors.update(_get_shapes(a_tensor, create_shape_spec(a_shape), f"arg{idx}"))
 
     bindings: Dict[str, ShapeVariable] = {}
 
@@ -283,10 +286,36 @@ def _get_tensors_and_bindings(
         elif isinstance(v, tuple) and len(v) == 2:
             v = cast(Tuple[Tensor, ShapeArg], v)
             assert k not in tensors
-            s = get_shape(v[0])
-            if s is not None:
-                tensors[k] = (s, create_shape_spec(v[1]))
+            tensors.update(_get_shapes(v[0], create_shape_spec(v[1]), k))
         else:
             raise ValueError(f"Unexpected kwarg {v}")
 
     return tensors, bindings
+
+
+def _get_shapes(
+    x: Any, s: ShapeSpec, name: str
+) -> Dict[str, Tuple[Tuple[Optional[int], ...], ShapeSpec]]:
+    if s.is_data_expr:
+        if not hasattr(x, "_get_shapes"):
+            raise ValueError(
+                f"{name}: spec $ specified, but no _get_shapes method was found. "
+                "This should have been added by the @check_data decorator."
+            )
+
+        return {
+            k2: v2
+            for k, (vt, vs) in x._get_shapes().items()
+            for k2, v2 in _get_shapes(vt, vs, f"{name}.{k}").items()
+        }
+
+    shape = get_shape(x)
+    if shape is not None:
+        if any(isinstance(d.value, DataExpr) for d in s.dims):
+            raise ValueError(
+                f"{name}: $ should not be present in the shape spec for a Tensor, "
+                f"got {s}"
+            )
+        return {name: (shape, s)}
+
+    return {}

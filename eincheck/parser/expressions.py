@@ -1,4 +1,5 @@
 import operator
+import string
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Collection, Dict, Generic, Set, Tuple, TypeVar
 
@@ -48,6 +49,12 @@ class Literal(Expr):
 
 class Variable(Expr):
     def __init__(self, x: str):
+        if not x:
+            raise ValueError("Variable name must not be empty")
+        if not (set(x) <= set(string.ascii_letters)):
+            raise ValueError(
+                f"Variable name should be made of only ascii letters, got {x}"
+            )
         self.x = x
 
     def __str__(self) -> str:
@@ -163,3 +170,18 @@ class BroadcastOp(_TupleBinaryOp):
                 out.append(xx)
 
         return tuple(out)
+
+
+class DataExpr(Expr):
+    def __str__(self) -> str:
+        return "$"
+
+    def __eq__(self, __o: object) -> bool:
+        return isinstance(__o, DataExpr)
+
+    @property
+    def variables(self) -> Set[str]:
+        return set()
+
+    def eval(self, values: Dict[str, ShapeVariable]) -> ShapeVariable:
+        raise RuntimeError("Tried to evaluate DataExpr")

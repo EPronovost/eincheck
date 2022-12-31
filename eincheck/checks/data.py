@@ -1,7 +1,7 @@
 import functools
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Mapping, Optional, Set, TypeVar
+from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, TypeVar
 
 from eincheck.checks.shapes import check_shapes
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
@@ -31,6 +31,15 @@ class DataWrapper(ABC):
         if extra_names:
             raise ValueError("No field found: [" + " ".join(sorted(extra_names)) + "]")
 
+    @staticmethod
+    def get_shapes_func(
+        shapes: Mapping[str, ShapeSpec]
+    ) -> Callable[[Any], Dict[str, Tuple[Any, ShapeSpec]]]:
+        def get_shapes(self: Any) -> Dict[str, Tuple[Any, ShapeSpec]]:
+            return {k: (getattr(self, k, None), s) for k, s in shapes.items()}
+
+        return get_shapes
+
 
 class NamedTupleWrapper(DataWrapper):
     def is_match(self, x: Any) -> bool:
@@ -41,12 +50,15 @@ class NamedTupleWrapper(DataWrapper):
 
         _new = cls.__new__
 
+        cls._get_shapes = DataWrapper.get_shapes_func(  # type: ignore[attr-defined]
+            shapes
+        )
+
         @functools.wraps(_new)  # type: ignore[misc]
         @classmethod
         def new_new(cls: Any, *a: Any, **k: Any) -> Any:
             out = _new(*a, **k)
-
-            check_shapes(**{k: (getattr(out, k), s) for k, s in shapes.items()})
+            check_shapes(**out._get_shapes())
             return out
 
         cls.__new__ = new_new  # type: ignore[assignment]
@@ -59,20 +71,21 @@ def _func_with_check(
 ) -> None:
     old_f = getattr(cls, func)
 
+    cls._get_shapes = DataWrapper.get_shapes_func(shapes)
+
     if append:
 
         def new_f(self: Any, *a: Any, **k: Any) -> Any:
             old_f(self, *a, **k)
-            check_shapes(**{k: (getattr(self, k), s) for k, s in shapes.items()})
+            check_shapes(**self._get_shapes())
 
     else:
 
         def new_f(self: Any, *a: Any, **k: Any) -> Any:
-            check_shapes(**{k: (getattr(self, k), s) for k, s in shapes.items()})
+            check_shapes(**self._get_shapes())
             old_f(self, *a, **k)
 
     new_f = functools.wraps(old_f)(new_f)
-
     setattr(cls, func, new_f)
 
 

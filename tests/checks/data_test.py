@@ -7,8 +7,10 @@ import pytest
 from typing_extensions import Protocol
 
 from eincheck.checks.data import check_data
-from eincheck.parser.grammar import ShapeArg
-from tests.utils import arr, raises_literal
+from eincheck.checks.func import check_func
+from eincheck.checks.shapes import check_shapes
+from eincheck.parser.grammar import ShapeArg, create_shape_spec
+from tests.utils import Dummy, arr, raises_literal
 
 
 @enum.unique
@@ -95,9 +97,10 @@ def data_type(request: Any) -> DataType:
 
 
 def test_basic(data_type: DataType) -> None:
-    FooXYZ = get_datatype(data_type, x="i j", y=["j", "k"], z="j 2")
+    spec = dict(x="i j", y="j k", z="j 2")
+    FooXYZ = get_datatype(data_type, **spec)
 
-    FooXYZ(arr(3, 4), arr(4, 3), arr(4, 2))
+    obj = FooXYZ(arr(3, 4), arr(4, 3), arr(4, 2))
     FooXYZ(arr(3, 4), arr(4, 3), None)
 
     with raises_literal("y dim 0: expected j=5 got 7"):
@@ -106,12 +109,23 @@ def test_basic(data_type: DataType) -> None:
     with raises_literal("z dim 1: expected 2=2 got 3"):
         FooXYZ(arr(1, 2), arr(2, 1), arr(2, 3))
 
+    s = obj._get_shapes()
+    assert set(s) == set(spec)
+    for k in spec:
+        assert s[k][1] == create_shape_spec(spec[k])
+
 
 def test_variadic(data_type: DataType) -> None:
     FooProduct = get_datatype(data_type, z="*x  *y", x="*x", y="*y")
 
     FooProduct(arr(3), arr(7), arr(3, 7))
-    FooProduct(arr(3, 5), None, arr(3, 5, 7))
+    foo = FooProduct(Dummy((3, 5)), None, arr(3, 5, 7))
+
+    check_shapes(data=(foo, "$"))
+
+    foo.x.shape += (1,)
+    with raises_literal("data.z dims (0, 1, 2): expected x=(3, 5, 1) got (3, 5, 7)"):
+        check_shapes(data=(foo, "$"))
 
     with raises_literal("z: expected rank 2, got shape (3, 5, 7)"):
         FooProduct(arr(3, 5), arr(), arr(3, 5, 7))
@@ -142,6 +156,13 @@ def test_incorrect_usage(data_type: DataType) -> None:
     with raises_literal("No field found: [a w]"):
         get_datatype(data_type, w=[3, 7], a="i", x="j", y="k")
 
+    @check_func("$ -> i")
+    def foo(x: Any) -> Any:
+        pass
+
+    with raises_literal("x: spec $ specified, but no _get_shapes method was found."):
+        foo((1, 2, 3))
+
 
 def test_bad_data_type() -> None:
     with raises_literal("Unexpected data type", TypeError):
@@ -150,3 +171,64 @@ def test_bad_data_type() -> None:
         class Foo:
             def __init__(self, x: Any) -> None:
                 self.x = x
+
+
+def test_func_arg(data_type: DataType) -> None:
+    Foo = get_datatype(data_type, x="*n i", y="*n j", z="(i+j)")
+
+    foo = Foo(arr(3, 4, 5), arr(3, 4, 7), arr(12))
+
+    @check_func("$ -> *n")
+    def f1(foo: Any, a: Any) -> Any:
+        return foo.x[..., 0] + foo.y[..., 0] + a
+
+    f1(foo, arr(3, 4))
+
+    with raises_literal("output0: expected rank 2, got shape (2, 3, 4)"):
+        f1(foo, arr(2, 3, 4))
+
+    @check_func("i, $ -> j")
+    def f2(x: Any, data: Any) -> Any:
+        a = data.x * x
+        b = a[..., None] + data.y[..., None, :]
+        return b.sum((0, 1))
+
+    foo2 = Foo(arr(3, 5), arr(3, 7), arr(12))
+
+    f2(arr(5), foo2)
+
+    with raises_literal("data.x dim 1: expected i=4 got 5"):
+        f2(arr(4), foo2)
+
+    with raises_literal("output0: expected rank 1, got shape (5, 7)"):
+        f2(arr(5), foo)
+
+
+def test_func_output(data_type: DataType) -> None:
+    Foo = get_datatype(data_type, x="*n i", y="*n j", z="(i+j)")
+
+    @check_func("i -> $")
+    def f1(i: Any, j: Any) -> Any:
+        return Foo(x=arr(3, 4, 5), y=j, z=None)
+
+    f1(arr(5), arr(3, 4, 1))
+
+    with raises_literal("output0.x dim 2: expected i=1 got 5"):
+        f1(arr(1), arr(3, 4, 2))
+
+    with raises_literal("y: expected rank 3, got shape (2,)"):
+        f1(arr(5), arr(2))
+
+
+def test_nested(data_type: DataType) -> None:
+    Foo = get_datatype(data_type, x="i j", y="j k", z="*z")
+    Bar = get_datatype(data_type, x="$", y="i j k", z="*z")
+
+    foo = Foo(arr(3, 5), arr(5, 7), arr(1, 2))
+    Bar(foo, arr(3, 5, 7), arr(1, 2))
+
+    with raises_literal("y dim 0: expected i=3 got 2"):
+        Bar(foo, arr(2, 5, 7), arr())
+
+    with raises_literal("z: expected rank 2, got shape (42,)"):
+        Bar(foo, arr(3, 5, 7), arr(42))

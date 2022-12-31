@@ -4,6 +4,7 @@ import dataclasses
 from typing import Dict, List, Optional, Tuple
 
 from eincheck.parser.dim_spec import DimSpec
+from eincheck.parser.expressions import DataExpr
 from eincheck.types import ShapeVariable
 
 
@@ -17,6 +18,9 @@ class ShapeSpec:
     def __str__(self) -> str:
         return "[" + " ".join(str(d) for d in self.dims) + "]"
 
+    def __eq__(self, __o: object) -> bool:
+        return isinstance(__o, ShapeSpec) and __o.dims == self.dims
+
     def is_checkable(self, bindings: Dict[str, ShapeVariable]) -> bool:
         if len(self.unknown_n_dims_indices(bindings)) > 1:
             return False
@@ -24,12 +28,16 @@ class ShapeSpec:
         return all(d.is_checkable(bindings) for d in self.dims)
 
     def unknown_n_dims_indices(self, bindings: Dict[str, ShapeVariable]) -> List[int]:
-        if self._unknown_n_dims_indices_cache and self._unknown_n_dims_indices_cache[
-            0
-        ] == hash(tuple(bindings.items())):
+        key = hash(tuple(bindings.items()))
+        if (
+            self._unknown_n_dims_indices_cache
+            and self._unknown_n_dims_indices_cache[0] == key
+        ):
             return self._unknown_n_dims_indices_cache[1]
 
-        return [i for i, d in enumerate(self.dims) if d.n_dims(bindings) is None]
+        out = [i for i, d in enumerate(self.dims) if d.n_dims(bindings) is None]
+        self._unknown_n_dims_indices_cache = (key, out)
+        return out
 
     def min_rank(self, bindings: Dict[str, ShapeVariable]) -> int:
         n_dims = [d.n_dims(bindings) for d in self.dims]
@@ -61,3 +69,7 @@ class ShapeSpec:
             raise RuntimeError(f"Expected rank {i}, got {n_dims}")
 
         return output
+
+    @property
+    def is_data_expr(self) -> bool:
+        return len(self.dims) == 1 and isinstance(self.dims[0].value, DataExpr)

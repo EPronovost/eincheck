@@ -12,10 +12,10 @@ from tests.utils import Dummy, raises_literal
 
 @dataclasses.dataclass(frozen=True)
 class _TestCase:
-    args: List[Tuple[Sequence[Optional[int]], ShapeArg]]
-    kwargs: Dict[str, Tuple[Sequence[Optional[int]], ShapeArg]] = dataclasses.field(
-        default_factory=dict
-    )
+    args: List[Tuple[Optional[Sequence[Optional[int]]], ShapeArg]]
+    kwargs: Dict[
+        str, Tuple[Optional[Sequence[Optional[int]]], ShapeArg]
+    ] = dataclasses.field(default_factory=dict)
     out_bindings: Dict[str, ShapeVariable] = dataclasses.field(default_factory=dict)
     in_bindings: Dict[str, ShapeVariable] = dataclasses.field(default_factory=dict)
     error: str = dataclasses.field(default="")
@@ -125,13 +125,47 @@ TEST_CASES = [
         ],
         out_bindings={"i": 16},
     ),
+    _TestCase([((), ""), ((), "..."), ((), "*i"), ((), "j*")], out_bindings={"i": ()}),
+    _TestCase([((), "_")], error="arg0: expected rank 1, got shape ()"),
+    _TestCase(
+        [((2, None), "i j")], error="arg0: tried to match (None,) to j, found None"
+    ),
+    _TestCase(
+        [((2, None), "i *j")], error="arg0: tried to match (None,) to *j, found None"
+    ),
+    _TestCase(
+        [((2, None), "i j*")], error="arg0: tried to match (None,) to j*, found None"
+    ),
+    _TestCase(
+        [((2, None), "i (i+1)")],
+        error="arg0 dim 1: tried to check (i+1) against (None,), found None",
+    ),
+    _TestCase(
+        [((2, None), "*(i || j)"), ((2,), "*i"), ((3,), "*j")],
+        error="arg0 dims (0, 1): tried to check *(i||j) against (2, None), found None",
+    ),
+    _TestCase(
+        [((2, None), "i (i+1)*")],
+        error="arg0 dim 1: tried to check (i+1)* against (None,), found None",
+    ),
+    _TestCase(
+        [((2, 3), "i j"), (None, "i j"), ((2, 2), "i j")],
+        error="arg2 dim 1: expected j=3 got 2",
+    ),
+    _TestCase(
+        [((2, 3, 4), ["i", "$", "j"])],
+        error="arg0: $ should not be present in the shape spec for a Tensor, "
+        "got [i $ j]",
+    ),
 ]
 
 
 @pytest.mark.parametrize("case", TEST_CASES)
 def test_simple(case: _TestCase) -> None:
-    args = [(Dummy(x), y) for x, y in case.args]
-    kwargs = {k: (Dummy(x), y) for k, (x, y) in case.kwargs.items()}
+    args = [(None if x is None else Dummy(x), y) for x, y in case.args]
+    kwargs = {
+        k: (None if x is None else Dummy(x), y) for k, (x, y) in case.kwargs.items()
+    }
     if case.error:
         with raises_literal(case.error):
             check_shapes(*args, **kwargs, **case.in_bindings)
