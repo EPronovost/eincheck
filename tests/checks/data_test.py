@@ -33,19 +33,28 @@ def get_datatype(
 ) -> FooFunc:
     if dt is DataType.NAMED_TUPLE:
 
-        @check_data(**kwargs)
-        class Foo1(NamedTuple):
-            x: Any
-            y: Any
-            z: Any
+        if method_sig:
 
-            if method_sig:
+            @check_data(**kwargs)
+            class Foo1a(NamedTuple):
+                x: Any
+                y: Any
+                z: Any
 
-                @check_func(method_sig)
+                @check_func(str(method_sig))
                 def bar(self, a: Any) -> Any:
                     return a
 
-        return Foo1
+            return Foo1a
+        else:
+
+            @check_data(**kwargs)
+            class Foo1b(NamedTuple):
+                x: Any
+                y: Any
+                z: Any
+
+            return Foo1b
 
     elif dt is DataType.DATACLASS:
 
