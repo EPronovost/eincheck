@@ -1,4 +1,5 @@
 import enum
+import inspect
 from dataclasses import dataclass
 from typing import Any, NamedTuple
 
@@ -232,3 +233,10 @@ def test_nested(data_type: DataType) -> None:
 
     with raises_literal("z: expected rank 2, got shape (42,)"):
         Bar(foo, arr(3, 5, 7), arr(42))
+
+
+def test_signature(data_type: DataType) -> None:
+    Foo = get_datatype(data_type, x="i j", y="j k", z="*z")
+
+    sig = inspect.signature(Foo)
+    assert list(sig.parameters) == ["x", "y", "z"]
