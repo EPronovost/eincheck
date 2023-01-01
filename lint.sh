@@ -11,6 +11,6 @@ else
 fi
 
 poetry run autoflake -ir "$DIR"
-poetry run isort --profile black "$DIR"
+poetry run isort "$DIR"
 poetry run black -C "$DIR"
 poetry run flake8 "$DIR"

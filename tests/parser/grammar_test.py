@@ -99,5 +99,5 @@ def test_bad_args(s: ShapeArg, error: Optional[str]) -> None:
         with raises_literal(error):
             create_shape_spec(s)
     else:
-        with pytest.raises(lark.UnexpectedInput):  # type: ignore[attr-defined]
+        with pytest.raises(lark.UnexpectedInput):
             create_shape_spec(s)

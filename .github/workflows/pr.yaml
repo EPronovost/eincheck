@@ -1,0 +1,43 @@
+name: Test PR
+
+on: pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [ "3.7", "3.8", "3.9", "3.10" ]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: black
+        run: poetry run black --check .
+
+      - name: isort
+        run: poetry run isort --check .
+
+      - name: flake8
+        run: poetry run flake8
+
+      - name: mypy
+        run: poetry run mypy .
+
+      - name: pytest
+        run: poetry run pytest --cov=eincheck
