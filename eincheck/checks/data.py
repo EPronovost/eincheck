@@ -54,7 +54,7 @@ class NamedTupleWrapper(DataWrapper):
             shapes
         )
 
-        @functools.wraps(_new)  # type: ignore[misc]
+        @functools.wraps(_new)
         def new_new(*a: Any, **k: Any) -> Any:
             out = _new(*a, **k)
             check_shapes(**out._get_shapes())
