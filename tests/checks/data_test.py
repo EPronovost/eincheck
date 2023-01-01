@@ -1,7 +1,7 @@
 import enum
 import inspect
 from dataclasses import dataclass
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, Optional
 
 import attrs
 import pytest
@@ -28,7 +28,9 @@ class FooFunc(Protocol):
         ...
 
 
-def get_datatype(dt: DataType, **kwargs: ShapeArg) -> FooFunc:
+def get_datatype(
+    dt: DataType, method_sig: Optional[str] = None, **kwargs: ShapeArg
+) -> FooFunc:
     if dt is DataType.NAMED_TUPLE:
 
         @check_data(**kwargs)
@@ -36,6 +38,12 @@ def get_datatype(dt: DataType, **kwargs: ShapeArg) -> FooFunc:
             x: Any
             y: Any
             z: Any
+
+            if method_sig:
+
+                @check_func(method_sig)
+                def bar(self, a: Any) -> Any:
+                    return a
 
         return Foo1
 
@@ -47,6 +55,12 @@ def get_datatype(dt: DataType, **kwargs: ShapeArg) -> FooFunc:
             x: Any
             y: Any
             z: Any
+
+            if method_sig:
+
+                @check_func(method_sig)
+                def bar(self, a: Any) -> Any:
+                    return a
 
         return Foo2
 
@@ -62,6 +76,12 @@ def get_datatype(dt: DataType, **kwargs: ShapeArg) -> FooFunc:
             def __post_init__(self) -> None:
                 assert any((self.x is not None, self.y is not None, self.z is not None))
 
+            if method_sig:
+
+                @check_func(method_sig)
+                def bar(self, a: Any) -> Any:
+                    return a
+
         return Foo3
 
     elif dt is DataType.ATTRS:
@@ -72,6 +92,11 @@ def get_datatype(dt: DataType, **kwargs: ShapeArg) -> FooFunc:
             x: Any
             y: Any
             z: Any
+            if method_sig:
+
+                @check_func(method_sig)
+                def bar(self, a: Any) -> Any:
+                    return a
 
         return Foo4
 
@@ -86,6 +111,12 @@ def get_datatype(dt: DataType, **kwargs: ShapeArg) -> FooFunc:
 
             def __attrs_post_init__(self) -> None:
                 assert any((self.x is not None, self.y is not None, self.z is not None))
+
+            if method_sig:
+
+                @check_func(method_sig)
+                def bar(self, a: Any) -> Any:
+                    return a
 
         return Foo5
 
@@ -240,3 +271,13 @@ def test_signature(data_type: DataType) -> None:
 
     sig = inspect.signature(Foo)
     assert list(sig.parameters) == ["x", "y", "z"]
+
+
+def test_method(data_type: DataType) -> None:
+    Foo = get_datatype(data_type, method_sig="$, *z -> *z", z="*z")
+
+    foo = Foo(None, None, arr(3, 4, 5))
+    foo.bar(arr(3, 4, 5))
+
+    with raises_literal("a dims (0, 1, 2): expected z=(3, 4, 5) got (2, 2, 2)"):
+        foo.bar(arr(2, 2, 2))

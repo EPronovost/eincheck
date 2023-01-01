@@ -30,7 +30,7 @@ def test_single_arg() -> None:
 
 
 def test_two_args() -> None:
-    @check_func("..., *x 2 -> *x")
+    @check_func("..., *x 2 -> *x,")
     def foo(x: Any, y: Any) -> Any:
         return y[..., 0] + y[..., 1] + x
 
@@ -126,6 +126,18 @@ def test_multiple_outputs() -> None:
         ):
             partial_sums(DummyArray((10, 11, 12), bad_dim))
 
+    @check_func("i, j -> i j, i j")
+    def foo(x: Any, y: Any) -> Any:
+        a = x[:, None] + y[None, :]
+        b = x[:, None] * y[None, :]
+        if x.shape == y.shape:
+            return a, b, x * y
+
+        return a, b
+
+    foo(arr(4), arr(7))
+    foo(arr(7), arr(7))
+
 
 def test_default_args() -> None:
     @check_func("i, j k, i, j *w -> k *w")
@@ -189,5 +201,98 @@ def test_invalid_usage() -> None:
     def bar(x: Any) -> Any:
         return x
 
-    with raises_literal("Expected 2 outputs, got 1"):
+    with raises_literal("Expected at least 2 outputs, got 1"):
         bar(arr(4))
+
+    with raises_literal("Spec for bad specified in both args and kwargs"):
+
+        @check_func("i -> i", bad="i")
+        def biz(bad: Any) -> Any:
+            return bad
+
+
+def test_kwarg_specs() -> None:
+    @check_func("a, b -> a b d", d="d")
+    def foo(a: Any, b: Any, c: Any, d: Any) -> Any:
+        return a[:, None, None] + b[:, None] + d
+
+    foo(arr(4), arr(5), arr(6), arr(7))
+    foo(arr(4), d=arr(5), c=arr(6), b=arr(7))
+
+    with raises_literal("a: expected rank 1, got shape (2, 3)"):
+        foo(arr(2, 3), arr(1), arr(1), arr(1))
+
+    with raises_literal("d: expected rank 1, got shape (2, 3)"):
+        foo(arr(1), arr(1), arr(1), arr(2, 3))
+
+
+@pytest.mark.parametrize("use_arrow", [True, False])
+def test_no_input_args(use_arrow: bool) -> None:
+    @check_func(("->" if use_arrow else "") + "i j, j k", x="i j")
+    def foo(x: Any, y: Any) -> Any:
+        return x + y, x.T @ y
+
+    foo(arr(42, 7), arr(42, 7))
+
+    with raises_literal("output0 dim 1: expected j=1 got 5"):
+        foo(arr(5, 1), arr(5, 5))
+
+
+def test_methods() -> None:
+    class Foo:
+        @check_func(x="i 7")
+        def __init__(self, x: Any):
+            self.x = x
+
+        @check_func("_, i j -> ...")
+        def m(self, y: Any) -> Any:
+            return self.x + y
+
+        @classmethod
+        @check_func("i", y="i")
+        def c(cls, y: Any) -> Any:
+            return y + y
+
+        @staticmethod
+        @check_func("i j -> i j")
+        def s(y: Any) -> Any:
+            return -y + arr(5)
+
+        @property
+        @check_func("i 7")
+        def p(self) -> Any:
+            return 2 * self.x
+
+    with raises_literal("x dim 1: expected 7=7 got 6"):
+        Foo(arr(1, 6))
+
+    with raises_literal("x: expected rank 2, got shape (1, 2, 3)"):
+        Foo(arr(1, 2, 3))
+
+    foo = Foo(arr(3, 7))
+
+    foo.m(arr(1, 7))
+
+    with raises_literal("y: expected rank 2, got shape (7, 8, 9)"):
+        foo.m(arr(7, 8, 9))
+
+    foo.c(arr(5))
+    Foo.c(arr(42))
+
+    with raises_literal("y: expected rank 1, got shape (7, 7)"):
+        foo.c(arr(7, 7))
+
+    with raises_literal("output0 dim 0: expected i=3 got 6"):
+        Foo.c((True, True, False))
+
+    foo.s(arr(3, 5))
+    Foo.s(arr(5, 5))
+
+    with raises_literal("output0 dim 1: expected j=1 got 5"):
+        foo.s(arr(3, 1))
+
+    _ = foo.p
+
+    foo.x = arr(5, 5)
+    with raises_literal("output0 dim 1: expected 7=7 got 5"):
+        _ = foo.p
