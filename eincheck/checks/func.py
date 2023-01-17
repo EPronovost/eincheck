@@ -73,9 +73,7 @@ def check_func(
             out = func(*args, **kwargs)
 
             out_tup = (
-                out
-                if isinstance(out, tuple) and (len(out) == 1 or len(output_shapes) > 1)
-                else (out,)
+                out if isinstance(out, tuple) and len(output_shapes) > 1 else (out,)
             )
             if len(out_tup) < len(output_shapes):
                 raise ValueError(

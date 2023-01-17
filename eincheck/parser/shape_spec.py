@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from eincheck.parser.dim_spec import DimSpec
 from eincheck.parser.expressions import DataExpr
@@ -73,3 +73,11 @@ class ShapeSpec:
     @property
     def is_data_expr(self) -> bool:
         return len(self.dims) == 1 and isinstance(self.dims[0].value, DataExpr)
+
+    @property
+    def variables(self) -> Set[str]:
+        x = set()
+        for d in self.dims:
+            if d.value is not None:
+                x |= d.value.variables
+        return x

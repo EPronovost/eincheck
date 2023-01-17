@@ -55,7 +55,7 @@ class Variable(Expr):
             raise ValueError(
                 f"Variable name should be made of only ascii letters, got {x}"
             )
-        self.x = x
+        self.x = str(x)
 
     def __str__(self) -> str:
         return self.x

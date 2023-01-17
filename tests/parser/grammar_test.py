@@ -50,7 +50,7 @@ TEST_CASES = [
             DimSpec.create_variable("world"),
         ],
     ),
-    ("(2 * i + 1) ", [DimSpec(AddOp(MulOp(Literal(2), Variable("i")), Literal(1)))]),
+    ("((2 * i) + 1) ", [DimSpec(AddOp(MulOp(Literal(2), Variable("i")), Literal(1)))]),
     ("(2 * (i + 1)) ", [DimSpec(MulOp(Literal(2), AddOp(Variable("i"), Literal(1))))]),
     ("$", [DimSpec(DataExpr())]),
     (["$"], [DimSpec(DataExpr())]),
