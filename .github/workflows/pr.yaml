@@ -41,3 +41,6 @@ jobs:
 
       - name: pytest
         run: poetry run pytest --cov=eincheck
+
+      - name: doctest
+        run: poetry run python -m run_doctest.py
