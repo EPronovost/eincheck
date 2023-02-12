@@ -32,7 +32,6 @@ def get_datatype(
     dt: DataType, method_sig: Optional[str] = None, **kwargs: ShapeArg
 ) -> FooFunc:
     if dt is DataType.NAMED_TUPLE:
-
         if method_sig:
 
             @check_data(**kwargs)
