@@ -22,22 +22,24 @@ grammar = r"""
 shape : dim? (" "+ dim)*
       | "$" -> dollar
 
-?expr : INT   -> int
-      | WORD  -> word
+?expr : value_expr
       | "_" -> underscore
-      | "(" math ")"
+
+?value_expr : INT   -> int
+            | WORD  -> word
+            | math
 
 ?dim : expr "*" -> repeated
     | "*" expr -> variadic
     | expr
     | "..." -> ellipse
 
-?math : math " "* "+" " "* math -> add
-      | math " "* "-" " "* math -> sub
-      | math " "* "*" " "* math -> mul
-      | math " "* "||" " "* math -> concat
-      | math " "* "^" " "* math -> broadcast
-      | expr
+?math : "(" " "* value_expr " "* "+" " "* value_expr " "* ")" -> add
+      | "(" " "* value_expr " "* "-" " "* value_expr " "* ")" -> sub
+      | "(" " "* value_expr " "* "*" " "* value_expr " "* ")" -> mul
+      | "(" " "* value_expr " "* "||" " "* value_expr " "* ")" -> concat
+      | "(" " "* value_expr " "* "^" " "* value_expr " "* ")" -> broadcast
+      | "(" " "* value_expr " "* ")"
 
 %import common.INT
 %import common.WORD

@@ -105,10 +105,10 @@ def _check_shape(
 
     expected_shape = create_shape_spec(s)
 
-    _check_rank(name, got_shape, expected_shape, bindings, msg)
-
     if msg:
         msg = "\n" + msg
+
+    _check_rank(name, got_shape, expected_shape, bindings, msg)
 
     unknown_size_inds = expected_shape.unknown_n_dims_indices(bindings)
     if len(unknown_size_inds) > 1:
@@ -173,9 +173,11 @@ def check_shapes(
     )
 
     checked_names = set()
-    bindings_len = len(bindings)
+    binded_names = set()
 
     for _ in range(len(tensors)):
+        bindings_len = len(bindings)
+
         for t_name, (t_got, t_expected) in tensors.items():
             if (
                 t_name in checked_names
@@ -183,8 +185,10 @@ def check_shapes(
             ):
                 continue
 
-            _check_rank(t_name, t_got, t_expected, bindings, msg)
-            _bind_shape(t_got, t_expected, bindings, t_name, msg)
+            if t_name not in binded_names:
+                _check_rank(t_name, t_got, t_expected, bindings, msg)
+                _bind_shape(t_got, t_expected, bindings, t_name, msg)
+                binded_names.add(t_name)
 
             if not t_expected.is_checkable(bindings):
                 continue
@@ -195,9 +199,18 @@ def check_shapes(
         if len(bindings) == bindings_len:
             break
 
+    unbound = set(tensors) - binded_names
+    if unbound:
+        raise ValueError(
+            f"Unable to determine bindings for: {' '.join(unbound)}\n{msg}"
+        )
     unchecked = set(tensors) - checked_names
     if unchecked:
-        raise ValueError(f"Unable to determine bindings for {unchecked}\n{msg}")
+        missing_vars = set.union(*(tensors[k][1].variables for k in unchecked))
+        raise ValueError(
+            f"Unable to check: [{' '.join(sorted(unchecked))}] "
+            f"missing variables: [{' '.join(sorted(missing_vars))}]\n{msg}"
+        )
 
     return bindings
 
@@ -262,7 +275,7 @@ def _check_rank(
             f"{name}: expected rank {bound_text}{expected_rank}, "
             f"got shape {got_shape}"
         ] + [f"  {k} = {v}" for k, v in bindings.items()]
-        raise ValueError("\n".join(rows) + msg)
+        raise ValueError("\n".join(rows) + "\n" + msg)
 
 
 def _get_tensors_and_bindings(

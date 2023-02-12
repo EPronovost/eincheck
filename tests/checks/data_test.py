@@ -171,7 +171,7 @@ def test_variadic(data_type: DataType) -> None:
     with raises_literal("z: expected rank 2, got shape (3, 5, 7)"):
         FooProduct(arr(3, 5), arr(), arr(3, 5, 7))
 
-    with raises_literal("Unable to determine bindings for {'z'}"):
+    with raises_literal("Unable to determine bindings for: z"):
         FooProduct(None, None, arr(3, 5))
 
 
@@ -183,10 +183,10 @@ def test_partial(data_type: DataType) -> None:
     FooPartial(x=arr(8, 8), y=None, z="hello, world")
     FooPartial([True, False], [0, 1, 2], "hello")
 
-    with raises_literal("Unable to determine bindings for {'y'}"):
+    with raises_literal("Unable to check: [y] missing variables: [batch i]"):
         FooPartial(None, arr(4), None)
 
-    with raises_literal("Unable to determine bindings for {'y'}"):
+    with raises_literal("Unable to check: [y] missing variables: [batch i]"):
         FooPartial("eincheck", arr(4), None)
 
 
@@ -218,6 +218,8 @@ def test_func_arg(data_type: DataType) -> None:
     Foo = get_datatype(data_type, x="*n i", y="*n j", z="(i+j)")
 
     foo = Foo(arr(3, 4, 5), arr(3, 4, 7), arr(12))
+
+    assert hasattr(foo, "_get_shapes")
 
     @check_func("$ -> *n")
     def f1(foo: Any, a: Any) -> Any:
