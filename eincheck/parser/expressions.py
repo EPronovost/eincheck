@@ -75,7 +75,6 @@ _T = TypeVar("_T", int, Tuple[int, ...])
 
 
 class _BinaryOp(Expr, Generic[_T]):
-
     expected_type: Any
 
     def __init__(self, x: Expr, y: Expr, op: str, func: Callable[[_T, _T], _T]):

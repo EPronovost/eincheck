@@ -102,7 +102,6 @@ def _check_shape(
     name: str,
     msg: str,
 ) -> Dict[str, ShapeVariable]:
-
     expected_shape = create_shape_spec(s)
 
     if msg:
