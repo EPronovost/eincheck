@@ -143,6 +143,13 @@ _T_Data = TypeVar("_T_Data")
 
 
 def check_data(**kwargs: ShapeArg) -> Callable[[_T_Data], _T_Data]:
+    """Check the shapes of fields of a data object.
+
+    The currently supported data objects are NamedTuple, dataclasses, and attrs.
+
+    :param kwargs: shape specs for fields of the data object
+    :return: a decorator for the data object class
+    """
     shapes = {k: create_shape_spec(v) for k, v in kwargs.items()}
 
     def wrapper(cls: _T_Data) -> _T_Data:

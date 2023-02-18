@@ -44,4 +44,4 @@ jobs:
         run: poetry run pytest --cov=eincheck
 
       - name: doctest
-        run: poetry run python run_doctest.py
+        run: cd docs && poetry run make doctest
