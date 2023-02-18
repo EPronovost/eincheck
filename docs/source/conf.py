@@ -1,0 +1,39 @@
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+import doctest
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+project = "eincheck"
+copyright = "2023, Ethan Pronovost"
+author = "Ethan Pronovost"
+
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx_autodoc_typehints",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.doctest",
+    'sphinx.ext.viewcode',
+]
+
+templates_path = ["_templates"]
+exclude_patterns = []
+
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+
+# -- Doctest options
+
+doctest_test_doctest_blocks = ""
+doctest_default_flags = doctest.REPORT_UDIFF ^ doctest.DONT_ACCEPT_TRUE_FOR_1

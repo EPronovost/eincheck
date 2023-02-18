@@ -11,6 +11,13 @@ _T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
 def check_func(
     shapes: str = "", **kwargs: ShapeArg
 ) -> Callable[[_T_Callable], _T_Callable]:
+    """Check the input and output shapes of a function.
+
+
+    :param shapes: string of input and output shape specs
+    :param kwargs: additional shape specs for function inputs
+    :return: a function decorator
+    """
     if "->" in shapes:
         input_str, output_str = shapes.split("->", 2)
     else:

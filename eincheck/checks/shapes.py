@@ -150,13 +150,33 @@ def check_shapes(
     """Check the shapes of Tensors against ShapeArg specifications.
 
     Examples:
-    ```
-    check_shapes((x, "... i j"), (y, "... j k"))
-    ```
 
-    ```
-    check_shapes(x=(x, "*batch t 3"), y=(y, ["*batch", ..., 3]), batch=(8, 2))
-    ```
+    .. doctest::
+
+        >>> from numpy.random import randn
+        >>> from eincheck import check_shapes
+        >>>
+        >>> check_shapes((randn(3, 4, 5), "... i j"), (randn(5, 6), "... j k"))
+        {'i': 4, 'j': 5, 'k': 6}
+        >>> check_shapes(
+        ...     x=(randn(8, 2, 7, 3), "*batch t 3"),
+        ...     y=(randn(8, 2, 1, 1, 3), "*batch ... 3"),
+        ...     batch=(8, 2),
+        ... )
+        {'batch': (8, 2), 't': 7}
+
+    Pass pairs of (tensor, shape spec) as either args or kwargs. The only difference
+    when using a kwarg is the display name in error messages (args are called ``arg0``,
+    ``arg1``, etc).
+
+    Kwargs can also specify the variable values (e.g. ``batch=(8, 2)``).
+
+    If all shape checks pass, returns a dictionary with all variable values.
+
+    :param args: Pairs of (tensor, shape spec)
+    :param kwargs: Pairs of (tensor, shape spec)
+    :raise ValueError: If the shapes are incorrect or cannot be verified
+    :return: Values for all bound variables from the shape specs
     """
     tensors, bindings = _get_tensors_and_bindings(*args, **kwargs)
     _check_variable_types(tensors, bindings)
