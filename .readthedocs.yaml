@@ -15,8 +15,7 @@ build:
       # Install dependencies.
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
       - poetry install --with dev
-  commands:
-    - poetry run python -m sphinx -T -E -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html
+      - python -m pip list
 
 sphinx:
   configuration: docs/conf.py
