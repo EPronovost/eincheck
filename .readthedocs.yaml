@@ -12,9 +12,11 @@ build:
       # Tell poetry to not use a virtual environment
       - poetry config virtualenvs.create false
     post_install:
-      # Install dependencies with 'docs' dependency group
+      # Install dependencies.
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
-      - poetry install
+      - poetry install --with dev
+  commands:
+    - poetry run python -m sphinx -T -E -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html
 
 sphinx:
   configuration: docs/conf.py
