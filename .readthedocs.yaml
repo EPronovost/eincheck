@@ -15,7 +15,6 @@ build:
       # Install dependencies.
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
       - poetry install --with dev
-      - python -m pip list
 
 sphinx:
-  configuration: docs/conf.py
+  configuration: docs/source/conf.py
