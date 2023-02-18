@@ -12,4 +12,8 @@ fi
 
 poetry run mypy "$DIR"
 poetry run pytest --cov=eincheck "$DIR"
-poetry run python run_doctest.py
+
+(
+  cd "$(dirname $0)/docs"
+  poetry run make doctest
+)

@@ -37,4 +37,5 @@ ignore-init-module-imports = true
 [tool.mypy]
 show_error_codes = true
 strict = true
+exclude = "docs"
 
