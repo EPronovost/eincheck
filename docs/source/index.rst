@@ -44,7 +44,7 @@ There are three key functions in `eincheck`, described in :ref:`API`:
 
     @check_func("... i, j i, j -> ... j")
     def linear(x, m, b):
-        return np.dot(x, m) + b
+        return (x[..., None, :] * m).sum(-1) + b
 
     @check_func("*x -> *x")
     def softmax(x):
@@ -64,6 +64,7 @@ There are three key functions in `eincheck`, described in :ref:`API`:
 .. testcode::
     :hide:
 
+    print(linear(np.random.randn(3, 4, 5), np.random.randn(6, 5), np.random.randn(6)).shape)
     out, weights = attention(
         np.random.randn(7, 4, 10),
         np.random.randn(7, 5, 10),
@@ -75,6 +76,7 @@ There are three key functions in `eincheck`, described in :ref:`API`:
 .. testoutput::
     :hide:
 
+    (3, 4, 6)
     (7, 4, 8)
     (7, 4, 5)
 

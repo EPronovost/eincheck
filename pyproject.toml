@@ -5,6 +5,10 @@ description = ""
 authors = ["Ethan Pronovost <epronovo1@gmail.com>"]
 readme = "README.md"
 
+[tool.poetry.urls]
+"Docs" = "https://eincheck.readthedocs.io/en/main/"
+"Github" = "https://github.com/EPronovost/eincheck"
+
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4"
 lark = "~1.1"
