@@ -33,3 +33,5 @@ class LineSegment2D(NamedTuple):
     start: torch.Tensor
     end: torch.Tensor
 ```
+
+For more info, [read the docs!](https://eincheck.readthedocs.io/en/main)

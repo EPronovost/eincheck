@@ -17,7 +17,7 @@ Welcome to eincheck's documentation!
 Getting Started
 ---------------
 
-To install `eincheck`, run
+To install eincheck, run
 
 .. code-block:: shell
 
