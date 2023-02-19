@@ -4,6 +4,9 @@
 
 Tensor shape checks inspired by einstein notation
 
+[Read the docs!](https://eincheck.readthedocs.io/en/main/)
+[Pypi](https://pypi.org/project/eincheck/)
+
 ## Overview
 
 This library has three main functions:
