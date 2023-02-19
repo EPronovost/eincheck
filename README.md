@@ -2,11 +2,10 @@
 
 [![CI](https://github.com/epronovost/eincheck/actions/workflows/pr.yaml/badge.svg)](https://github.com/epronovost/eincheck/actions/workflows/pr.yaml)
 [![Documentation Status](https://readthedocs.org/projects/eincheck/badge/?version=main)](https://eincheck.readthedocs.io/en/main/?badge=main)
+[![PyPI version](https://badge.fury.io/py/eincheck.svg)](https://badge.fury.io/py/eincheck)
 
 Tensor shape checks inspired by einstein notation
 
-[Read the docs!](https://eincheck.readthedocs.io/en/main/)
-[Pypi](https://pypi.org/project/eincheck/)
 
 ## Overview
 
