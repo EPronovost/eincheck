@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional, Tuple, Union, cast
 
+from eincheck.contexts import _should_do_checks
 from eincheck.parser.dim_spec import DimSpec, DimType
 from eincheck.parser.expressions import DataExpr, Variable
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
@@ -178,6 +179,9 @@ def check_shapes(
     :raise ValueError: If the shapes are incorrect or cannot be verified
     :return: Values for all bound variables from the shape specs
     """
+    if not _should_do_checks():
+        return {}
+
     tensors, bindings = _get_tensors_and_bindings(*args, **kwargs)
     _check_variable_types(tensors, bindings)
 

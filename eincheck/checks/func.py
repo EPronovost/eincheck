@@ -3,6 +3,7 @@ import inspect
 from typing import Any, Callable, TypeVar
 
 from eincheck.checks.shapes import check_shapes
+from eincheck.contexts import _should_do_checks
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
 
 _T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
@@ -53,6 +54,9 @@ def check_func(
 
         @functools.wraps(func)
         def inner(*args: Any, **kwargs: Any) -> Any:
+            if not _should_do_checks():
+                return func(*args, **kwargs)
+
             bound_args = sig.bind(*args, **kwargs)
             bound_args.apply_defaults()
 

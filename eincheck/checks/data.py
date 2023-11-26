@@ -60,7 +60,7 @@ class NamedTupleWrapper(DataWrapper):
             check_shapes(**out._get_shapes())
             return out
 
-        cls.__new__ = new_new  # type: ignore[assignment]
+        cls.__new__ = new_new  # type: ignore[method-assign]
 
         return cls
 
@@ -99,10 +99,15 @@ class DataclassWrapper(DataWrapper):
         self.dataclasses = dataclasses
 
     def is_match(self, x: Any) -> bool:
-        return self.dataclasses.is_dataclass(x)
+        out = self.dataclasses.is_dataclass(x)
+        assert isinstance(out, bool)
+        return out
 
     def wrap(self, cls: _T, shapes: Mapping[str, ShapeSpec]) -> _T:
-        self.check_fields(shapes, {f.name for f in self.dataclasses.fields(cls)})
+        self.check_fields(
+            shapes,
+            {f.name for f in self.dataclasses.fields(cls)},  # type: ignore[arg-type]
+        )
 
         if hasattr(cls, "__post_init__"):
             _func_with_check(cls, "__post_init__", shapes, False)

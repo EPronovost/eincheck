@@ -316,4 +316,6 @@ You can use ``check_shapes`` to re-check a data object.
       arg0.p: got (4,) expected [i 2]
 
 
+.. autofunction:: eincheck.enable_checks
+.. autofunction:: eincheck.disable_checks
 
