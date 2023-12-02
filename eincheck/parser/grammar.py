@@ -3,6 +3,7 @@ from typing import Any, Sequence, Tuple, Union
 from lark.lark import Lark
 from lark.visitors import Transformer
 
+from eincheck.cache import resizeable_lru_cache
 from eincheck.parser.dim_spec import DimSpec, DimType
 from eincheck.parser.expressions import (
     AddOp,
@@ -111,6 +112,7 @@ class TreeToSpec(Transformer):  # type: ignore[type-arg]
 _transformer = TreeToSpec()
 
 
+@resizeable_lru_cache()
 def parse_shape_spec(s: str) -> ShapeSpec:
     """Parse a string into a ShapeSpec."""
     out = _transformer.transform(_parser.parse(s.strip(" ")))
