@@ -19,30 +19,10 @@ def _set_enable_checks(value: bool) -> Generator[None, None, None]:
 
 
 def enable_checks() -> ContextManager[None]:
-    """Enable eincheck to do shape checks.
-
-    Example:
-    ```
-    with disable_checks():
-        # check_shapes is a no-op inside this context
-
-        with enable_checks():
-            # now check_shapes does something again
-    ```
-    """
+    """Enable eincheck to do shape checks."""
     return _set_enable_checks(True)
 
 
 def disable_checks() -> ContextManager[None]:
-    """Disable eincheck to do shape checks.
-
-    Example:
-    ```
-    with disable_checks():
-        # check_shapes is a no-op inside this context
-
-        with enable_checks():
-            # now check_shapes does something again
-    ```
-    """
+    """Disable eincheck from doing shape checks."""
     return _set_enable_checks(False)

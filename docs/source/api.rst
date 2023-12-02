@@ -6,7 +6,7 @@ API
     import numpy as np
     import numpy.typing as npt
     from numpy.random import randn
-    from eincheck import check_func, check_data, check_shapes
+    from eincheck import check_func, check_data, check_shapes, disable_checks, enable_checks
     from typing import NamedTuple
     import attrs
 
@@ -318,4 +318,32 @@ You can use ``check_shapes`` to re-check a data object.
 
 .. autofunction:: eincheck.enable_checks
 .. autofunction:: eincheck.disable_checks
+
+Context manager to disable eincheck.
+This can be used to make code run faster once you're confident the shapes are correct.
+`check_shapes` will return an empty dictionary.
+
+.. doctest::
+
+    >>> with disable_checks():
+    ...     # Eincheck is a no-op inside this context.
+    ...     print(check_shapes((randn(2, 3), "i")))
+    ...
+    {}
+
+.. autofunction:: eincheck.enable_checks
+
+Context manager to enable eincheck (e.g. if inside a `disable_checks` context).
+
+.. doctest::
+
+    >>> with disable_checks():
+    ...     with enable_checks():
+    ...         check_shapes((randn(2, 3), "i"))
+    ...
+    Traceback (most recent call last):
+    ...
+    ValueError: arg0: expected rank 1, got shape (2, 3)
+      arg0: got (2, 3) expected [i]
+
 
