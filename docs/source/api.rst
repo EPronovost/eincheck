@@ -6,7 +6,11 @@ API
     import numpy as np
     import numpy.typing as npt
     from numpy.random import randn
-    from eincheck import check_func, check_data, check_shapes, disable_checks, enable_checks
+    from eincheck import (
+      check_func, check_data, check_shapes,
+      disable_checks, enable_checks,
+      parser_cache_clear, parser_cache_info, parser_resize_cache,
+    )
     from typing import NamedTuple
     import attrs
 
@@ -316,7 +320,6 @@ You can use ``check_shapes`` to re-check a data object.
       arg0.p: got (4,) expected [i 2]
 
 
-.. autofunction:: eincheck.enable_checks
 .. autofunction:: eincheck.disable_checks
 
 Context manager to disable eincheck.
@@ -346,4 +349,24 @@ Context manager to enable eincheck (e.g. if inside a `disable_checks` context).
     ValueError: arg0: expected rank 1, got shape (2, 3)
       arg0: got (2, 3) expected [i]
 
+.. autofunction:: eincheck.parser_cache_clear
+
+Clear the ``lru_cache`` for parsing shape strings.
+
+.. autofunction:: eincheck.parser_cache_info
+
+Get the ``lru_cache`` cache info for the parser cache.
+
+.. doctest::
+
+  >>> parser_cache_clear()
+  >>> check_shapes((randn(2, 3), "a b"), (randn(3, 4), "b c"), (randn(2, 3), "a b"))
+  {'a': 2, 'b': 3, 'c': 4}
+  >>> parser_cache_info()
+  CacheInfo(hits=1, misses=2, maxsize=128, currsize=2)
+
+.. autofunction:: eincheck.parser_resize_cache
+
+Reset the parser cache to a ``lru_cache`` with the given size.
+This will clear the cache and change the ``maxsize`` field in ``CacheInfo``.
 
