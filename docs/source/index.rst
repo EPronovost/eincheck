@@ -13,6 +13,7 @@ Welcome to eincheck's documentation!
 
    specifying_shapes
    api
+   performance
 
 Getting Started
 ---------------
@@ -85,6 +86,7 @@ Resources
 
 * :ref:`Specifying Shapes` contains information on how to format shape specifications (e.g. ``"... i j"``)
 * :ref:`API` contains information on the ``check_*`` functions
+* :ref:`Performance` contains information on making code with shape checks run faster
 
 
 Indices and tables

@@ -206,6 +206,13 @@ Repeated underscores (``_*``) is equivalent to an ellipse.
     >>> check_shapes((x, "_* 5"))
     {}
 
+
+Data Objects
+------------
+
+A dollar sign (``$``) can be used with data objects decorated with ``check_data``.
+See the API section on this decorator for more info.
+
 Limitations
 -----------
 
