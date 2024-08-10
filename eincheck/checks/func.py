@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Iterable, TypeVar
 
 from eincheck.checks.shapes import check_shapes
 from eincheck.contexts import _should_do_checks
@@ -51,6 +51,8 @@ def check_func(
                 )
 
             input_shapes[arg_name] = arg_spec
+
+        _check_no_extra_params(input_shapes, sig)
 
         @functools.wraps(func)
         def inner(*args: Any, **kwargs: Any) -> Any:
@@ -104,3 +106,16 @@ def check_func(
         return inner  # type: ignore[return-value]
 
     return wrapper
+
+
+def _check_no_extra_params(got_names: Iterable[str], sig: inspect.Signature) -> None:
+    """Check that all of got_names are valid for sig."""
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
+        # Any param name is valid.
+        return
+
+    extra_names = set(got_names) - set(sig.parameters)
+    if extra_names:
+        raise NameError(
+            f"Parameter names not found in function signature: {extra_names}"
+        )

@@ -296,3 +296,18 @@ def test_methods() -> None:
     foo.x = arr(5, 5)
     with raises_literal("output0 dim 1: expected 7=7 got 5"):
         _ = foo.p
+
+
+def test_extra_names() -> None:
+    with raises_literal(
+        "Parameter names not found in function signature: {'c'}", NameError
+    ):
+
+        @check_func(a="x", b="x", c="x")
+        def foo(a: Any, b: Any) -> None:
+            pass
+
+    # This is ok with **kwargs.
+    @check_func(a="x", b="x", c="x")
+    def bar(a: Any, b: Any, **kwargs: Any) -> None:
+        pass
