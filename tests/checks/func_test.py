@@ -1,9 +1,8 @@
-from typing import Any, Sequence, Tuple
+from typing import Any, Protocol, Sequence, Tuple
 
 import numpy as np
 import numpy.typing as npt
 import pytest
-from typing_extensions import Protocol
 
 from eincheck.checks.func import check_func
 from eincheck.types import _ShapeType
