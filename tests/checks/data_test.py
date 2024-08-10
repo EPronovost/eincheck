@@ -1,11 +1,10 @@
 import enum
 import inspect
 from dataclasses import dataclass
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional, Protocol
 
 import attrs
 import pytest
-from typing_extensions import Protocol
 
 from eincheck.checks.data import check_data
 from eincheck.checks.func import check_func
