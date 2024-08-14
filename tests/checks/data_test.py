@@ -23,8 +23,7 @@ class DataType(enum.Enum):
 
 
 class FooFunc(Protocol):
-    def __call__(self, x: Any, y: Any, z: Any) -> Any:
-        ...
+    def __call__(self, x: Any, y: Any, z: Any) -> Any: ...
 
 
 def get_datatype(
