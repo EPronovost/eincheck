@@ -13,9 +13,9 @@ from tests.utils import Dummy, raises_literal
 @dataclasses.dataclass(frozen=True)
 class _TestCase:
     args: List[Tuple[Optional[Sequence[Optional[int]]], ShapeArg]]
-    kwargs: Dict[
-        str, Tuple[Optional[Sequence[Optional[int]]], ShapeArg]
-    ] = dataclasses.field(default_factory=dict)
+    kwargs: Dict[str, Tuple[Optional[Sequence[Optional[int]]], ShapeArg]] = (
+        dataclasses.field(default_factory=dict)
+    )
     out_bindings: Dict[str, ShapeVariable] = dataclasses.field(default_factory=dict)
     in_bindings: Dict[str, ShapeVariable] = dataclasses.field(default_factory=dict)
     error: str = dataclasses.field(default="")

@@ -93,8 +93,7 @@ def test_multiple_outputs() -> None:
     class _TensorWithSum(Protocol[_ShapeType]):
         shape: _ShapeType
 
-        def sum(self, dims: Tuple[int, ...]) -> "_TensorWithSum[Any]":
-            ...
+        def sum(self, dims: Tuple[int, ...]) -> "_TensorWithSum[Any]": ...
 
     TensorWithSum = _TensorWithSum[Any]
 
