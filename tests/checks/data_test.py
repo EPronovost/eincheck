@@ -10,7 +10,7 @@ from eincheck.checks.data import check_data
 from eincheck.checks.func import check_func
 from eincheck.checks.shapes import check_shapes
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
-from tests.utils import Dummy, arr, raises_literal
+from tests.testing_utils import Dummy, arr, raises_literal
 
 
 @enum.unique

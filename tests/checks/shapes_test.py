@@ -7,7 +7,7 @@ from eincheck.checks.shapes import check_shapes
 from eincheck.parser.dim_spec import DimSpec
 from eincheck.parser.grammar import ShapeArg
 from eincheck.types import ShapeVariable
-from tests.utils import Dummy, raises_literal
+from tests.testing_utils import Dummy, raises_literal
 
 
 @dataclasses.dataclass(frozen=True)

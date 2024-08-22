@@ -6,7 +6,7 @@ import pytest
 
 from eincheck.checks.func import check_func
 from eincheck.types import _ShapeType
-from tests.utils import Dummy, arr, raises_literal
+from tests.testing_utils import Dummy, arr, raises_literal
 
 
 def test_single_arg() -> None:

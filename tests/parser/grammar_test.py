@@ -6,7 +6,7 @@ import pytest
 from eincheck.parser.dim_spec import DimSpec, DimType
 from eincheck.parser.expressions import AddOp, DataExpr, Literal, MulOp, Variable
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
-from tests.utils import raises_literal
+from tests.testing_utils import raises_literal
 
 
 def _simple_test_case(s: str) -> Tuple[ShapeArg, List[DimSpec]]:

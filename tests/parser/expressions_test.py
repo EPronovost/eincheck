@@ -12,7 +12,7 @@ from eincheck.parser.expressions import (
     Variable,
     _ScalarBinaryOp,
 )
-from tests.utils import raises_literal
+from tests.testing_utils import raises_literal
 
 
 @pytest.mark.parametrize("x", [1, 7])
