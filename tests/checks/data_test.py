@@ -274,6 +274,31 @@ def test_nested(data_type: DataType) -> None:
         Bar(foo, arr(3, 5, 7), arr(42))
 
 
+def test_nested_dot(data_type: DataType) -> None:
+    Foo = get_datatype(data_type, x="*n", y="*n", z="*n")
+    Bar = get_datatype(data_type, **{"x.x": "i", "y": "i i"})
+
+    foo1 = Foo(arr(4), None, arr(4))
+    foo2 = Foo(arr(4, 5), arr(4, 5), arr(4, 5))
+
+    Bar(foo1, arr(4, 4), None)
+    Bar(None, arr(4, 4), None)
+
+    with raises_literal("x.x: expected rank 1, got shape (4, 5)"):
+        Bar(foo2, arr(4, 4), None)
+
+    with raises_literal("y dim 0: expected i=4 got 7"):
+        Bar(foo1, arr(7, 7), None)
+
+    with raises_literal("'numpy.ndarray' object has no attribute 'x'", AttributeError):
+        Bar(arr(4), arr(4, 4), None)
+
+    BadBar = get_datatype(data_type, **{"x.a": "i"})
+    with raises_literal("object has no attribute 'a'", AttributeError):
+        BadBar(foo1, arr(4, 4), None)
+    BadBar(None, arr(4, 4), None)
+
+
 def test_signature(data_type: DataType) -> None:
     Foo = get_datatype(data_type, x="i j", y="j k", z="*z")
 

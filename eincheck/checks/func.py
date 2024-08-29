@@ -5,6 +5,7 @@ from typing import Any, Callable, Iterable, TypeVar
 from eincheck.checks.shapes import check_shapes
 from eincheck.contexts import _should_do_checks
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
+from eincheck.utils import get_object, parse_dot_name
 
 _T_Callable = TypeVar("_T_Callable", bound=Callable[..., Any])
 
@@ -52,7 +53,17 @@ def check_func(
 
             input_shapes[arg_name] = arg_spec
 
-        _check_no_extra_params(input_shapes, sig)
+        # dot_name, name_base, name_parts
+        # e.g. ("foo.x.y", "foo", ["x", "y"])
+        parsed_names = [(n, *parse_dot_name(n)) for n in input_shapes]
+        # sort to match signature for nice error messages
+        sig_params = list(sig.parameters)
+        parsed_names.sort(
+            key=lambda t: (
+                sig_params.index(t[1]) if t[1] in sig_params else len(sig_params)
+            )
+        )
+        _check_no_extra_params((x for _, x, _ in parsed_names), sig)
 
         @functools.wraps(func)
         def inner(*args: Any, **kwargs: Any) -> Any:
@@ -63,23 +74,29 @@ def check_func(
             bound_args.apply_defaults()
 
             input_data = {}
-            for p in sig.parameters.values():
-                if p.name not in input_shapes:
+            for spec_name, spec_base, spec_parts in parsed_names:
+                if spec_base not in sig.parameters:
                     continue
 
-                x = bound_args.arguments[p.name]
-                if p.kind is inspect.Parameter.VAR_POSITIONAL:
+                p = sig.parameters[spec_base]
+                x = get_object(spec_name, bound_args.arguments)
+
+                if len(spec_parts) > 0:
+                    p_data = [(spec_name, x)]
+                elif p.kind is inspect.Parameter.VAR_POSITIONAL:
                     assert isinstance(x, tuple)
-                    p_data = [(f"{p.name}_{x_idx}", xx) for x_idx, xx in enumerate(x)]
+                    p_data = [
+                        (f"{spec_name}_{x_idx}", xx) for x_idx, xx in enumerate(x)
+                    ]
                 elif p.kind is inspect.Parameter.VAR_KEYWORD:
                     assert isinstance(x, dict)
                     p_data = list(x.items())
                 else:
-                    p_data = [(p.name, x)]
+                    p_data = [(spec_name, x)]
 
                 for x_name, xx in p_data:
                     assert x_name not in input_data
-                    input_data[x_name] = (xx, input_shapes[p.name])
+                    input_data[x_name] = (xx, input_shapes[spec_name])
 
             updated_spec = check_shapes(**input_data)
 

@@ -1,4 +1,4 @@
-from typing import Any, Protocol, Sequence, Tuple
+from typing import Any, NamedTuple, Protocol, Sequence, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -75,6 +75,17 @@ def test_var_arg() -> None:
     with raises_literal("x_2 dims (0, 1): expected x=(2, 3) got (2, 5)"):
         stack(arr(2, 3), arr(2, 3), arr(2, 5))
 
+    @check_func(**{"x.0": "i", "x.1": "j i"})
+    def foo(*x: npt.NDArray[Any]) -> npt.NDArray[Any]:
+        return sum(x)  # type: ignore[return-value]
+
+    foo(arr(4), arr(5, 4))
+    foo(arr(4), arr(5, 4), arr(6, 5, 4))
+    foo(arr(4), arr(5, 4), arr(6, 5, 4), arr(7, 6, 5, 4))
+
+    with raises_literal("x.1 dim 1: expected i=3 got 2"):
+        foo(arr(3), arr(2, 2))
+
 
 def test_var_kwarg() -> None:
     @check_func("i j -> i j")
@@ -87,6 +98,19 @@ def test_var_kwarg() -> None:
 
     with raises_literal("z dim 1: expected j=4 got 5"):
         foo(x=arr(3, 4), y=arr(3, 4), z=arr(3, 5))
+
+    @check_func(**{"kwargs.a": "i", "kwargs.b": "i"})
+    def bar(**kwargs: Any) -> Any:
+        return kwargs["a"] * kwargs["b"]
+
+    bar(a=arr(4), b=arr(4))
+    bar(a=arr(4), b=arr(4), c=arr(7))
+
+    with raises_literal("kwargs.b dim 0: expected i=3 got 5"):
+        bar(a=arr(3), b=arr(5))
+
+    with raises_literal("'b'", KeyError):
+        bar(a=arr(2))
 
 
 def test_multiple_outputs() -> None:
@@ -302,10 +326,38 @@ def test_extra_names() -> None:
     ):
 
         @check_func(a="x", b="x", c="x")
-        def foo(a: Any, b: Any) -> None:
+        def foo1(a: Any, b: Any) -> None:
+            pass
+
+    with raises_literal(
+        "Parameter names not found in function signature: {'c'}", NameError
+    ):
+
+        @check_func(**{"a.y": "x", "b": "x", "c.x": "x"})
+        def foo2(a: Any, b: Any) -> None:
             pass
 
     # This is ok with **kwargs.
     @check_func(a="x", b="x", c="x")
-    def bar(a: Any, b: Any, **kwargs: Any) -> None:
+    def foo3(a: Any, b: Any, **kwargs: Any) -> None:
         pass
+
+    @check_func(**{"a.x": "foo", "c.first": "foo"})
+    def foo4(a: Any, b: Any, **kwargs: Any) -> None:
+        pass
+
+
+def test_name_path() -> None:
+
+    class Foo(NamedTuple):
+        x: Any
+        y: Any
+
+    @check_func(**{"f.x": "i", "f.y": "i j", "z": "j"})
+    def foo(f: Foo, z: Any) -> Any:
+        return f.x[:, None] + f.y * z
+
+    foo(Foo(arr(4), arr(4, 3)), arr(3))
+
+    with raises_literal("f.y dim 0: expected i=3 got 4"):
+        foo(Foo(arr(3), arr(4, 5)), arr(5))

@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, Typ
 from eincheck.checks.shapes import check_shapes
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
 from eincheck.parser.shape_spec import ShapeSpec
+from eincheck.utils import get_object, parse_dot_name
 
 _T = TypeVar("_T")
 
@@ -27,7 +28,7 @@ class DataWrapper(ABC):
 
     @staticmethod
     def check_fields(shapes: Mapping[str, ShapeSpec], got: Set[str]) -> None:
-        extra_names = set(shapes) - got
+        extra_names = {parse_dot_name(n)[0] for n in shapes} - got
         if extra_names:
             raise ValueError("No field found: [" + " ".join(sorted(extra_names)) + "]")
 
@@ -36,7 +37,7 @@ class DataWrapper(ABC):
         shapes: Mapping[str, ShapeSpec]
     ) -> Callable[[Any], Dict[str, Tuple[Any, ShapeSpec]]]:
         def get_shapes(self: Any) -> Dict[str, Tuple[Any, ShapeSpec]]:
-            return {k: (getattr(self, k, None), s) for k, s in shapes.items()}
+            return {k: (get_object(k, self), s) for k, s in shapes.items()}
 
         return get_shapes
 
