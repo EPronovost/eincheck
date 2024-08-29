@@ -27,12 +27,18 @@ class FooFunc(Protocol):
 
 
 def get_datatype(
-    dt: DataType, method_sig: Optional[str] = None, **kwargs: ShapeArg
+    dt: DataType, use_dict: bool, method_sig: Optional[str] = None, **kwargs: ShapeArg
 ) -> FooFunc:
+
+    if use_dict:
+        decorator = check_data(kwargs)
+    else:
+        decorator = check_data(**kwargs)
+
     if dt is DataType.NAMED_TUPLE:
         if method_sig:
 
-            @check_data(**kwargs)
+            @decorator
             class Foo1a(NamedTuple):
                 x: Any
                 y: Any
@@ -45,7 +51,7 @@ def get_datatype(
             return Foo1a
         else:
 
-            @check_data(**kwargs)
+            @decorator
             class Foo1b(NamedTuple):
                 x: Any
                 y: Any
@@ -55,7 +61,7 @@ def get_datatype(
 
     elif dt is DataType.DATACLASS:
 
-        @check_data(**kwargs)
+        @decorator
         @dataclass
         class Foo2:
             x: Any
@@ -72,7 +78,7 @@ def get_datatype(
 
     elif dt is DataType.DATACLASS_POST_INIT:
 
-        @check_data(**kwargs)
+        @decorator
         @dataclass
         class Foo3:
             x: Any
@@ -92,7 +98,7 @@ def get_datatype(
 
     elif dt is DataType.ATTRS:
 
-        @check_data(**kwargs)
+        @decorator
         @attrs.define
         class Foo4:
             x: Any
@@ -108,7 +114,7 @@ def get_datatype(
 
     elif dt is DataType.ATTRS_POST_INIT:
 
-        @check_data(**kwargs)
+        @decorator
         @attrs.define
         class Foo5:
             x: Any
@@ -134,9 +140,16 @@ def data_type(request: Any) -> DataType:
     return x
 
 
-def test_basic(data_type: DataType) -> None:
+@pytest.fixture(params=[False, True])
+def use_dict(request: Any) -> bool:
+    x = request.param
+    assert isinstance(x, bool)
+    return x
+
+
+def test_basic(data_type: DataType, use_dict: bool) -> None:
     spec = dict(x="i j", y="j k", z="j 2")
-    FooXYZ = get_datatype(data_type, **spec)
+    FooXYZ = get_datatype(data_type, use_dict, **spec)
 
     obj = FooXYZ(arr(3, 4), arr(4, 3), arr(4, 2))
     FooXYZ(arr(3, 4), arr(4, 3), None)
@@ -153,8 +166,8 @@ def test_basic(data_type: DataType) -> None:
         assert s[k][1] == create_shape_spec(spec[k])
 
 
-def test_variadic(data_type: DataType) -> None:
-    FooProduct = get_datatype(data_type, z="*x  *y", x="*x", y="*y")
+def test_variadic(data_type: DataType, use_dict: bool) -> None:
+    FooProduct = get_datatype(data_type, use_dict, z="*x  *y", x="*x", y="*y")
 
     FooProduct(arr(3), arr(7), arr(3, 7))
     foo = FooProduct(Dummy((3, 5)), None, arr(3, 5, 7))
@@ -172,8 +185,8 @@ def test_variadic(data_type: DataType) -> None:
         FooProduct(None, None, arr(3, 5))
 
 
-def test_partial(data_type: DataType) -> None:
-    FooPartial = get_datatype(data_type, x="*batch i", y="*batch (i + 1)")
+def test_partial(data_type: DataType, use_dict: bool) -> None:
+    FooPartial = get_datatype(data_type, use_dict, x="*batch i", y="*batch (i + 1)")
 
     FooPartial(arr(7, 3, 5), arr(7, 3, 6), arr(1, 2))
     FooPartial(y=arr(7, 3, 5), x=arr(7, 3, 4), z=arr(1, 2))
@@ -187,12 +200,12 @@ def test_partial(data_type: DataType) -> None:
         FooPartial("eincheck", arr(4), None)
 
 
-def test_incorrect_usage(data_type: DataType) -> None:
+def test_incorrect_usage(data_type: DataType, use_dict: bool) -> None:
     with raises_literal("No field found: [w]"):
-        get_datatype(data_type, w=[3, 7])
+        get_datatype(data_type, use_dict, w=[3, 7])
 
     with raises_literal("No field found: [a w]"):
-        get_datatype(data_type, w=[3, 7], a="i", x="j", y="k")
+        get_datatype(data_type, use_dict, w=[3, 7], a="i", x="j", y="k")
 
     @check_func("$ -> i")
     def foo(x: Any) -> Any:
@@ -211,8 +224,8 @@ def test_bad_data_type() -> None:
                 self.x = x
 
 
-def test_func_arg(data_type: DataType) -> None:
-    Foo = get_datatype(data_type, x="*n i", y="*n j", z="(i+j)")
+def test_func_arg(data_type: DataType, use_dict: bool) -> None:
+    Foo = get_datatype(data_type, use_dict, x="*n i", y="*n j", z="(i+j)")
 
     foo = Foo(arr(3, 4, 5), arr(3, 4, 7), arr(12))
 
@@ -244,8 +257,8 @@ def test_func_arg(data_type: DataType) -> None:
         f2(arr(5), foo)
 
 
-def test_func_output(data_type: DataType) -> None:
-    Foo = get_datatype(data_type, x="*n i", y="*n j", z="(i+j)")
+def test_func_output(data_type: DataType, use_dict: bool) -> None:
+    Foo = get_datatype(data_type, use_dict, x="*n i", y="*n j", z="(i+j)")
 
     @check_func("i -> $")
     def f1(i: Any, j: Any) -> Any:
@@ -260,9 +273,9 @@ def test_func_output(data_type: DataType) -> None:
         f1(arr(5), arr(2))
 
 
-def test_nested(data_type: DataType) -> None:
-    Foo = get_datatype(data_type, x="i j", y="j k", z="*z")
-    Bar = get_datatype(data_type, x="$", y="i j k", z="*z")
+def test_nested(data_type: DataType, use_dict: bool) -> None:
+    Foo = get_datatype(data_type, use_dict, x="i j", y="j k", z="*z")
+    Bar = get_datatype(data_type, use_dict, x="$", y="i j k", z="*z")
 
     foo = Foo(arr(3, 5), arr(5, 7), arr(1, 2))
     Bar(foo, arr(3, 5, 7), arr(1, 2))
@@ -274,9 +287,9 @@ def test_nested(data_type: DataType) -> None:
         Bar(foo, arr(3, 5, 7), arr(42))
 
 
-def test_nested_dot(data_type: DataType) -> None:
-    Foo = get_datatype(data_type, x="*n", y="*n", z="*n")
-    Bar = get_datatype(data_type, **{"x.x": "i", "y": "i i"})
+def test_nested_dot(data_type: DataType, use_dict: bool) -> None:
+    Foo = get_datatype(data_type, use_dict, x="*n", y="*n", z="*n")
+    Bar = get_datatype(data_type, use_dict, **{"x.x": "i", "y": "i i"})
 
     foo1 = Foo(arr(4), None, arr(4))
     foo2 = Foo(arr(4, 5), arr(4, 5), arr(4, 5))
@@ -293,21 +306,21 @@ def test_nested_dot(data_type: DataType) -> None:
     with raises_literal("'numpy.ndarray' object has no attribute 'x'", AttributeError):
         Bar(arr(4), arr(4, 4), None)
 
-    BadBar = get_datatype(data_type, **{"x.a": "i"})
+    BadBar = get_datatype(data_type, use_dict, **{"x.a": "i"})
     with raises_literal("object has no attribute 'a'", AttributeError):
         BadBar(foo1, arr(4, 4), None)
     BadBar(None, arr(4, 4), None)
 
 
-def test_signature(data_type: DataType) -> None:
-    Foo = get_datatype(data_type, x="i j", y="j k", z="*z")
+def test_signature(data_type: DataType, use_dict: bool) -> None:
+    Foo = get_datatype(data_type, use_dict, x="i j", y="j k", z="*z")
 
     sig = inspect.signature(Foo)
     assert list(sig.parameters) == ["x", "y", "z"]
 
 
-def test_method(data_type: DataType) -> None:
-    Foo = get_datatype(data_type, method_sig="$, *z -> *z", z="*z")
+def test_method(data_type: DataType, use_dict: bool) -> None:
+    Foo = get_datatype(data_type, use_dict, method_sig="$, *z -> *z", z="*z")
 
     foo = Foo(None, None, arr(3, 4, 5))
     foo.bar(arr(3, 4, 5))

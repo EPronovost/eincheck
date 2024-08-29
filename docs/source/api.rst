@@ -218,6 +218,24 @@ Not all fields of the object need shape specs.
     >>> _ = Foo(randn(4), randn(4), randn(4))
     >>> _ = Foo(randn(5), randn(5), randn(42))
 
+A dictionary can also be used to specify shapes instead of keyword arguments.
+
+.. doctest::
+
+    >>> @check_data({"x": "*i", "y": "*i"})
+    ... class Foo(NamedTuple):
+    ...     x: npt.NDArray[float]
+    ...     y: npt.NDArray[float]
+    ...
+    >>> _ = Foo(randn(3, 4), randn(3, 4))
+    >>> _ = Foo(randn(4, 5), randn(4))
+    Traceback (most recent call last):
+    ...
+    ValueError: y: expected rank 2, got shape (4,)
+      i = (4, 5)
+      x: got (4, 5) expected [*i]
+      y: got (4,)   expected [*i]
+
 
 What if you want to compare the shapes in a ``@check_data`` decorated object with other tensors?
 The shape spec ``$`` will match ``@check_data`` decorated objects and include all the shapes from the object.
