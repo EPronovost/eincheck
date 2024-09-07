@@ -7,7 +7,7 @@ API
     import numpy.typing as npt
     from numpy.random import randn
     from eincheck import (
-      check_func, check_data, check_shapes,
+      check_func, check_func2, check_data, check_shapes,
       disable_checks, enable_checks,
       parser_cache_clear, parser_cache_info, parser_resize_cache,
     )
@@ -182,6 +182,9 @@ The first argument to the function is ``self``.
     ValueError: output0 dim 0: expected i=1 got 4
         i=1
       output0: got (4,) expected [i]
+
+.. autofunction:: eincheck.check_func2
+
 
 .. autofunction:: eincheck.check_data
 

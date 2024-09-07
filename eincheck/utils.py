@@ -23,6 +23,9 @@ def parse_dot_name(dot_name: str) -> Tuple[str, List[str]]:
 
 def get_object(dot_name: str, data: Any) -> Any:
     """Use a dot name path to extract an object from data."""
+    if not dot_name:
+        return data
+
     first_name, name_path = parse_dot_name(dot_name)
 
     x = _get_field(data, first_name)

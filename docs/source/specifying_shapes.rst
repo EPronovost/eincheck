@@ -251,7 +251,7 @@ As dots are not valid in Python identifiers, dictionaries are currently needed t
 
     >>> import numpy as np
     >>> import numpy.typing as npt
-    >>> from eincheck import check_func
+    >>> from eincheck import check_func, check_func2
     >>> from typing import NamedTuple
     >>> from numpy.random import randn
     >>>
@@ -259,7 +259,24 @@ As dots are not valid in Python identifiers, dictionaries are currently needed t
     ...     x: npt.NDArray[float]
     ...     y: npt.NDArray[float]
     ...
-    >>> @check_func(**{"a.x": "i", "a.y": "j", "b": "i j"})
+    >>> @check_func2({"a.x": "i", "a.y": "j", "b": "i j"}, "i j")
+    ... def func(a: Foo, b: npt.NDArray[float]) -> npt.NDArray[float]:
+    ...     return a.x[:, None] * a.y + b
+    ...
+    >>> func(Foo(randn(3), randn(4)), randn(3, 4)).shape
+    (3, 4)
+    >>> func(Foo(randn(3), randn(4)), randn(2, 4))
+    Traceback (most recent call last):
+        ...
+    ValueError: b dim 0: expected i=3 got 2
+        i=3
+        j=4
+      a.x: got (3,)   expected [i]
+      a.y: got (4,)   expected [j]
+      b: got (2, 4) expected [i j]
+    >>>
+    >>> # Same behavior with check_func.
+    >>> @check_func("i j", **{"a.x": "i", "a.y": "j", "b": "i j"})
     ... def func(a: Foo, b: npt.NDArray[float]) -> npt.NDArray[float]:
     ...     return a.x[:, None] * a.y + b
     ...
@@ -276,7 +293,7 @@ As dots are not valid in Python identifiers, dictionaries are currently needed t
       b: got (2, 4) expected [i j]
     >>>
     >>> # Equivalent, using integer indices instead of named fields.
-    >>> @check_func(**{"a.0": "i", "a.1": "j", "b": "i j"})
+    >>> @check_func2({"a.0": "i", "a.1": "j", "b": "i j"}, "i j")
     ... def func2(a: Foo, b: npt.NDArray[float]) -> npt.NDArray[float]:
     ...     return a.x[:, None] * a.y + b
     ...
