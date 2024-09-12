@@ -1,4 +1,5 @@
 import functools
+import itertools
 import sys
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, TypeVar
@@ -6,6 +7,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, Typ
 from eincheck.checks.shapes import check_shapes
 from eincheck.parser.grammar import ShapeArg, create_shape_spec
 from eincheck.parser.shape_spec import ShapeSpec
+from eincheck.utils import get_object, parse_dot_name
 
 _T = TypeVar("_T")
 
@@ -27,7 +29,7 @@ class DataWrapper(ABC):
 
     @staticmethod
     def check_fields(shapes: Mapping[str, ShapeSpec], got: Set[str]) -> None:
-        extra_names = set(shapes) - got
+        extra_names = {parse_dot_name(n)[0] for n in shapes} - got
         if extra_names:
             raise ValueError("No field found: [" + " ".join(sorted(extra_names)) + "]")
 
@@ -36,7 +38,7 @@ class DataWrapper(ABC):
         shapes: Mapping[str, ShapeSpec]
     ) -> Callable[[Any], Dict[str, Tuple[Any, ShapeSpec]]]:
         def get_shapes(self: Any) -> Dict[str, Tuple[Any, ShapeSpec]]:
-            return {k: (getattr(self, k, None), s) for k, s in shapes.items()}
+            return {k: (get_object(k, self), s) for k, s in shapes.items()}
 
         return get_shapes
 
@@ -147,15 +149,23 @@ _wrappers: List[DataWrapper] = []
 _T_Data = TypeVar("_T_Data")
 
 
-def check_data(**kwargs: ShapeArg) -> Callable[[_T_Data], _T_Data]:
+def check_data(
+    shape_dict: Optional[Mapping[str, ShapeArg]] = None, /, **kwargs: ShapeArg
+) -> Callable[[_T_Data], _T_Data]:
     """Check the shapes of fields of a data object.
 
     The currently supported data objects are NamedTuple, dataclasses, and attrs.
 
-    :param kwargs: shape specs for fields of the data object
+    :param shape_dict: shape specs for fields of the data object in a dictionary
+    :param kwargs: shape specs for fields of the data object as keywords
     :return: a decorator for the data object class
     """
-    shapes = {k: create_shape_spec(v) for k, v in kwargs.items()}
+    if shape_dict is None:
+        shape_dict = {}
+    shapes = {
+        k: create_shape_spec(v)
+        for k, v in itertools.chain(shape_dict.items(), kwargs.items())
+    }
 
     def wrapper(cls: _T_Data) -> _T_Data:
         for w in _wrappers:

@@ -211,7 +211,172 @@ Data Objects
 ------------
 
 A dollar sign (``$``) can be used with data objects decorated with ``check_data``.
+For example, the following two ``check_shapes`` are equivalent.
+
+.. doctest::
+
+    >>> import numpy as np
+    >>> import numpy.typing as npt
+    >>> from eincheck import check_shapes, check_data
+    >>> from typing import NamedTuple
+    >>> from numpy.random import randn
+    >>>
+    >>> @check_data(x="i", y="i")
+    ... class Foo(NamedTuple):
+    ...     x: npt.NDArray[float]
+    ...     y: npt.NDArray[float]
+    ...
+    >>> f = Foo(randn(3), randn(3))
+    >>> z = randn(3, 3)
+    >>> check_shapes(
+    ...     **{
+    ...         "f.x": (f.x, "i"),
+    ...         "f.y": (f.y, "i"),
+    ...         "z": (z, "i i"),
+    ...     }
+    ... )
+    {'i': 3}
+    >>> check_shapes(f=(f, "$"), z=(z, "i i"))
+    {'i': 3}
+
 See the API section on this decorator for more info.
+
+Sometimes it is easier to specify the shapes of individual fields inside a data object.
+When using ``check_shapes``, users can explicitly access these fields (e.g. ``f.x`` in the example above).
+
+When using ``check_func`` and ``check_data``, dot name paths can be used to access subfields of an object, regardless of whether the object is decorated with ``check_data``.
+As dots are not valid in Python identifiers, dictionaries are currently needed to use such names.
+
+..  doctest::
+
+    >>> import numpy as np
+    >>> import numpy.typing as npt
+    >>> from eincheck import check_func, check_func2
+    >>> from typing import NamedTuple
+    >>> from numpy.random import randn
+    >>>
+    >>> class Foo(NamedTuple):
+    ...     x: npt.NDArray[float]
+    ...     y: npt.NDArray[float]
+    ...
+    >>> @check_func2({"a.x": "i", "a.y": "j", "b": "i j"}, "i j")
+    ... def func(a: Foo, b: npt.NDArray[float]) -> npt.NDArray[float]:
+    ...     return a.x[:, None] * a.y + b
+    ...
+    >>> func(Foo(randn(3), randn(4)), randn(3, 4)).shape
+    (3, 4)
+    >>> func(Foo(randn(3), randn(4)), randn(2, 4))
+    Traceback (most recent call last):
+        ...
+    ValueError: b dim 0: expected i=3 got 2
+        i=3
+        j=4
+      a.x: got (3,)   expected [i]
+      a.y: got (4,)   expected [j]
+      b: got (2, 4) expected [i j]
+    >>>
+    >>> # Same behavior with check_func.
+    >>> @check_func("i j", **{"a.x": "i", "a.y": "j", "b": "i j"})
+    ... def func(a: Foo, b: npt.NDArray[float]) -> npt.NDArray[float]:
+    ...     return a.x[:, None] * a.y + b
+    ...
+    >>> func(Foo(randn(3), randn(4)), randn(3, 4)).shape
+    (3, 4)
+    >>> func(Foo(randn(3), randn(4)), randn(2, 4))
+    Traceback (most recent call last):
+        ...
+    ValueError: b dim 0: expected i=3 got 2
+        i=3
+        j=4
+      a.x: got (3,)   expected [i]
+      a.y: got (4,)   expected [j]
+      b: got (2, 4) expected [i j]
+    >>>
+    >>> # Equivalent, using integer indices instead of named fields.
+    >>> @check_func2({"a.0": "i", "a.1": "j", "b": "i j"}, "i j")
+    ... def func2(a: Foo, b: npt.NDArray[float]) -> npt.NDArray[float]:
+    ...     return a.x[:, None] * a.y + b
+    ...
+    >>> func2(Foo(randn(3), randn(4)), randn(3, 4)).shape
+    (3, 4)
+    >>> func2(Foo(randn(3), randn(4)), randn(2, 4))
+    Traceback (most recent call last):
+        ...
+    ValueError: b dim 0: expected i=3 got 2
+        i=3
+        j=4
+      a.0: got (3,)   expected [i]
+      a.1: got (4,)   expected [j]
+      b: got (2, 4) expected [i j]
+
+
+Dot name paths can be particularly useful when working with subfields that are themselves decorated with ``check_data``.
+Using ``$`` enforces that all shape variables match, which is sometimes not desired.
+
+.. doctest::
+
+    >>> import numpy
+    >>> import numpy.typing as npt
+    >>> from eincheck import check_data
+    >>> from dataclasses import dataclass
+    >>>
+    >>> @check_data(tokens="n t d", mask="n t")
+    ... @dataclass
+    ... class TokensWithMask:
+    ...     tokens: npt.NDArray[float]
+    ...     mask: npt.NDArray[float]
+    ...
+    ...     @staticmethod
+    ...     def rand(n: int, t: int, d: int) -> "TokensWithMask":
+    ...         return TokensWithMask(np.random.randn(n, t, d), np.random.rand(n, t) > 0.3)
+    ...
+    >>> # With this decorator, the t dimension of query, key, and value has to match.
+    >>> @check_data(query="$", key="$", value="$")
+    ... @dataclass
+    ... class AttentionData1:
+    ...     query: TokensWithMask
+    ...     key: TokensWithMask
+    ...     value: TokensWithMask
+    ...
+    >>> q = TokensWithMask.rand(3, 4, 5)
+    >>> k = TokensWithMask.rand(3, 7, 5)
+    >>> _ = AttentionData1(q, q, q)
+    >>> _ = AttentionData1(q, k, k)
+    Traceback (most recent call last):
+        ...
+    ValueError: key.tokens dim 1: expected t=4 got 7
+        n=3
+        t=4
+        d=5
+      query.tokens: got (3, 4, 5) expected [n t d]
+      query.mask: got (3, 4)    expected [n t]
+      key.tokens: got (3, 7, 5) expected [n t d]
+      key.mask: got (3, 7)    expected [n t]
+      value.tokens: got (3, 7, 5) expected [n t d]
+      value.mask: got (3, 7)    expected [n t]
+    >>>
+    >>> # Using dot name paths allows for different sequence dimensions.
+    >>> @check_data({"query.tokens": "n q d", "key.tokens": "n k d", "value.tokens": "n k d"})
+    ... @dataclass
+    ... class AttentionData2:
+    ...     query: TokensWithMask
+    ...     key: TokensWithMask
+    ...     value: TokensWithMask
+    ...
+    >>> _ = AttentionData2(q, q, q)
+    >>> _ = AttentionData2(q, k, k)
+    >>> _ = AttentionData2(q, k, TokensWithMask.rand(3, 7, 2))
+    Traceback (most recent call last):
+        ...
+    ValueError: value.tokens dim 2: expected d=5 got 2
+        n=3
+        q=4
+        d=5
+        k=7
+      query.tokens: got (3, 4, 5) expected [n q d]
+      key.tokens: got (3, 7, 5) expected [n k d]
+      value.tokens: got (3, 7, 2) expected [n k d]
+
 
 Limitations
 -----------

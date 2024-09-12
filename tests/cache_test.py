@@ -7,7 +7,7 @@ from eincheck import (
     parser_resize_cache,
 )
 from eincheck.cache import ResizeableLruCache
-from tests.utils import arr
+from tests.testing_utils import arr
 
 FUNC_CALLS: List[str] = []
 

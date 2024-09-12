@@ -1,5 +1,5 @@
 from .checks.data import check_data
-from .checks.func import check_func
+from .checks.func import check_func, check_func2
 from .checks.shapes import check_shapes
 from .contexts import disable_checks, enable_checks
 from .parser.parse_cache import (
@@ -11,6 +11,7 @@ from .parser.parse_cache import (
 __all__ = [
     "check_data",
     "check_func",
+    "check_func2",
     "check_shapes",
     "disable_checks",
     "enable_checks",

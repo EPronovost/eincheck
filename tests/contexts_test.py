@@ -5,7 +5,7 @@ import pytest
 from eincheck.checks.func import check_func
 from eincheck.checks.shapes import check_shapes
 from eincheck.contexts import disable_checks, enable_checks
-from tests.utils import arr
+from tests.testing_utils import arr
 
 
 def test_disable_check_shapes() -> None:
