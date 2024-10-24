@@ -6,6 +6,18 @@ The most common way is a single string with a list of dimension constraints sepa
 The syntax for shape constraints is a superset of the einstein notation used for ops like ``einsum``.
 The following sections describe this syntax.
 
+.. csv-table:: Syntax Cheat Sheet
+   :header: "Shape Spec", "Section"
+
+    "``2``, ``i``", ":ref:`Integers and Variables`"
+    "``(2 * x)``", ":ref:`Expressions`"
+    "``a*``", ":ref:`Repeated Dimension Constraints`"
+    "``*n``", ":ref:`Variadic Dimension Constraints`"
+    "``_``, ``...``", ":ref:`Underscores and Ellipses`"
+    "``x!``", ":ref:`Broadcasting`"
+    "``$``", ":ref:`Data Objects`"
+
+
 Integers and Variables
 ----------------------
 
@@ -205,6 +217,48 @@ Repeated underscores (``_*``) is equivalent to an ellipse.
     {}
     >>> check_shapes((x, "_* 5"))
     {}
+
+Broadcasting
+------------
+
+A dimension constraint with an ``!`` following it will match anything that can be broadcast to that value.
+For example, if ``i=3`` then ``i!`` will match a dimension of either ``3`` or ``1``.
+Similarly, if ``j=(2, 3)`` then ``*j!`` will match shapes of ``(2, 3)``, ``(2, 1)``, ``(1, 3)``, or ``(1, 1)``.
+
+.. doctest::
+
+    >>> from numpy.random import randn
+    >>> from eincheck import check_shapes
+    >>>
+    >>> check_shapes((randn(3, 4), "a! b"), a=3)
+    {'a': 3, 'b': 4}
+    >>> check_shapes((randn(1, 4), "a! b"), a=3)
+    {'a': 3, 'b': 4}
+    >>> check_shapes((randn(2, 4), "a! b"), a=3)
+    Traceback (most recent call last):
+        ...
+    ValueError: arg0 dim 0: expected can broadcast to a=3 got 2
+        a=3
+        b=4
+      arg0: got (2, 4) expected [a! b]
+    >>>
+    >>> check_shapes(
+    ...     (randn(2, 3), "*j"),
+    ...     (randn(1, 3), "*j!"),
+    ...     (randn(2, 1), "*j!"),
+    ...     (randn(1, 1), "*j!"),
+    ... )
+    {'j': (2, 3)}
+    >>> check_shapes(
+    ...     (randn(2, 3), "*j"),
+    ...     (randn(1, 4), "*j!"),
+    ... )
+    Traceback (most recent call last):
+        ...
+    ValueError: arg1 dims (0, 1): expected can broadcast to j=(2, 3) got (1, 4)
+        j=(2, 3)
+      arg0: got (2, 3) expected [*j]
+      arg1: got (1, 4) expected [*j!]
 
 
 Data Objects

@@ -64,6 +64,11 @@ TEST_CASES = [
             DimSpec(None),
         ],
     ),
+    ("7!", [DimSpec.create_literal(7).make_can_broadcast()]),
+    ("42*!", [DimSpec.create_literal(42).make_repeated().make_can_broadcast()]),
+    ("x!", [DimSpec.create_variable("x").make_can_broadcast()]),
+    ("*y!", [DimSpec.create_variable("y").make_variadic().make_can_broadcast()]),
+    ("z*!", [DimSpec.create_variable("z").make_repeated().make_can_broadcast()]),
 ]
 
 
