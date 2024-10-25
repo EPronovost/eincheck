@@ -27,7 +27,7 @@ shape : can_broadcast_dim? (" "+ can_broadcast_dim)*
       | "_" -> underscore
 
 ?value_expr : INT   -> int
-            | WORD  -> word
+            | NAME  -> word
             | math
 
 ?can_broadcast_dim : dim "!" -> can_broadcast
@@ -46,8 +46,7 @@ shape : can_broadcast_dim? (" "+ can_broadcast_dim)*
       | "(" " "* value_expr " "* ")"
 
 %import common.INT
-%import common.WORD
-%import common.WS
+%import python.NAME
 """
 
 _parser = Lark(grammar, start="shape")

@@ -17,6 +17,8 @@ def _simple_test_case(s: str) -> Tuple[ShapeArg, List[DimSpec]]:
 TEST_CASES = [
     _simple_test_case("i j Hello World i I"),
     _simple_test_case("i 2  1 42 HELLO  ii"),
+    _simple_test_case("a1 a2 a3"),
+    _simple_test_case("name_with_underscores Name_With_Underscores"),
     ("...", [DimSpec(None, DimType.REPEATED)]),
     (
         "5 ...  k",
@@ -91,8 +93,8 @@ BAD_ARGS: List[Tuple[ShapeArg, Optional[str]]] = [
     ("i $", None),
     ("... 2+1", None),
     ("i$", None),
-    (["i%"], "Variable name should be made of only ascii letters, got i%"),
-    (["2.0"], "Variable name should be made of only ascii letters, got 2.0"),
+    (["i%"], "Variable name should be a valid python name, got i%"),
+    (["2.0"], "Variable name should be a valid python name, got 2.0"),
     ([""], "Variable name must not be empty"),
     ([3.2], "Unexpected type: float"),  # type: ignore[list-item]
 ]

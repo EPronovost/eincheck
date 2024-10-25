@@ -96,7 +96,7 @@ The strings in the sequence must be single variable names, with no parentheses o
     >>> bad(randn(3, 4)).shape
     Traceback (most recent call last):
     ...
-    ValueError: Variable name should be made of only ascii letters, got i+1
+    ValueError: Variable name should be a valid python name, got i+1
 
 Disabling Checks
 ----------------

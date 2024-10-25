@@ -24,9 +24,9 @@ Integers and Variables
 The simplest way to specify a dimension constraint is a literal integer.
 
 Variables can be used to capture dynamic dimensions.
-Variables can be any string of ``[a-zA-Z]+``.
+Variables can be any valid python variable name, defined by the regex ``[^\W\d]\w*``.
 
-For example, the shape spec ``"i 4 inner"`` will match any 3D Tensor where the second dimension is 4, and bind ``i`` to the first dimension and ``inner`` to the last.
+For example, the shape spec ``"i 4 inner_dim"`` will match any 3D Tensor where the second dimension is 4, and bind ``i`` to the first dimension and ``inner`` to the last.
 
 .. doctest::
 
@@ -34,16 +34,16 @@ For example, the shape spec ``"i 4 inner"`` will match any 3D Tensor where the s
     >>> from eincheck import check_shapes
     >>>
     >>> check_shapes(
-    ...     (np.random.randn(3, 4, 5), "i 4 inner"),
+    ...     (np.random.randn(3, 4, 5), "i 4 inner_dim"),
     ... )
-    {'i': 3, 'inner': 5}
+    {'i': 3, 'inner_dim': 5}
     >>> check_shapes(
-    ...     (np.random.randn(3, 4), "i 4 inner"),
+    ...     (np.random.randn(3, 4), "i 4 inner_dim"),
     ... )
     Traceback (most recent call last):
         ...
     ValueError: arg0: expected rank 3, got shape (3, 4)
-      arg0: got (3, 4) expected [i 4 inner]
+      arg0: got (3, 4) expected [i 4 inner_dim]
 
     >>> check_shapes(
     ...     (np.random.randn(3, 4, 5), "i 4 i"),
