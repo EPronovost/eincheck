@@ -32,6 +32,8 @@ class DimSpec:
     # None represents an unconstrained dimension (i.e. _ or ...).
     value: Optional[Expr]
     type: DimType = dataclasses.field(default=DimType.SINGLE)
+    # If true, will accept any shape that can be broadcast to value.
+    can_broadcast: bool = dataclasses.field(default=False)
 
     def __str__(self) -> str:
         s = str(self.value) if self.value else "_"
@@ -39,6 +41,8 @@ class DimSpec:
             s = "*" + s
         elif self.type is DimType.REPEATED:
             s = s + "*"
+        if self.can_broadcast:
+            s = s + "!"
         return s
 
     @property
@@ -52,6 +56,9 @@ class DimSpec:
     def make_repeated(self) -> DimSpec:
         assert self.type is DimType.SINGLE
         return dataclasses.replace(self, type=DimType.REPEATED)
+
+    def make_can_broadcast(self) -> DimSpec:
+        return dataclasses.replace(self, can_broadcast=True)
 
     @staticmethod
     def create_literal(x: int) -> DimSpec:
@@ -81,13 +88,16 @@ class DimSpec:
             raise ValueError(f"Unexpected type: {type(x).__name__}")
 
     def is_defined(self, values: Collection[str]) -> bool:
+        """Whether self.value can be evaluated given a set of known variables."""
         if self.value is None:
             return True
         return self.value.is_defined(values)
 
     def is_checkable(self, values: Collection[str]) -> bool:
         """Whether the DimSpec can be used in a shape check with the given values."""
-        return isinstance(self.value, Variable) or self.is_defined(values)
+        return (
+            isinstance(self.value, Variable) and not self.can_broadcast
+        ) or self.is_defined(values)
 
     def n_dims(self, bindings: Dict[str, ShapeVariable]) -> Optional[int]:
         """Determine the number of dimensions matched by this DimSpec."""

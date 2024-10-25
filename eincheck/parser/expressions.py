@@ -1,5 +1,5 @@
 import operator
-import string
+import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Collection, Dict, Generic, Set, Tuple, TypeVar
 
@@ -48,13 +48,13 @@ class Literal(Expr):
 
 
 class Variable(Expr):
+    NAME_REGEX = re.compile(r"[^\W\d]\w*")
+
     def __init__(self, x: str):
         if not x:
             raise ValueError("Variable name must not be empty")
-        if not (set(x) <= set(string.ascii_letters)):
-            raise ValueError(
-                f"Variable name should be made of only ascii letters, got {x}"
-            )
+        if not self.NAME_REGEX.fullmatch(x):
+            raise ValueError(f"Variable name should be a valid python name, got {x}")
         self.x = str(x)
 
     def __str__(self) -> str:

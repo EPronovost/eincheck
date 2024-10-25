@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, Tuple, Union, cast
+import itertools
+from typing import Any, Dict, Optional, Set, Tuple, Union, cast
 
 from eincheck.contexts import _should_do_checks
 from eincheck.parser.dim_spec import DimSpec, DimType
@@ -22,6 +23,15 @@ def _check_dim_spec(
 
     expected_value = d.value.eval(bindings)
 
+    if d.can_broadcast:
+        broadcast_values: Set[ShapeVariable]
+        if isinstance(expected_value, int):
+            broadcast_values = {expected_value, 1}
+        else:
+            broadcast_values = {
+                tuple(p) for p in itertools.product(*([x, 1] for x in expected_value))
+            }
+
     if d.type is DimType.VARIADIC and isinstance(expected_value, int):
         raise ValueError(
             f"{name}: expected variadic DimSpec {d} to evaluate to a tuple, "
@@ -34,12 +44,19 @@ def _check_dim_spec(
         )
 
     def do_check(g: ShapeVariable, indices: ShapeVariable) -> None:
-        if g != expected_value:
+        if d.can_broadcast and g not in broadcast_values:
+            first_line = f"expected can broadcast to {d.value}={expected_value} got {g}"
+        elif not d.can_broadcast and g != expected_value:
+            first_line = f"expected {d.value}={expected_value} got {g}"
+        else:
+            first_line = None
+
+        if first_line:
             dim_str = (
                 f"dim {indices}" if isinstance(indices, int) else f"dims {indices}"
             )
             raise ValueError(
-                f"{name} {dim_str}: expected {d.value}={expected_value} got {g}"
+                f"{name} {dim_str}: {first_line}"
                 + "".join(f"\n    {k}={v}" for k, v in bindings.items())
                 + msg
             )

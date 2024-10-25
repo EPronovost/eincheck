@@ -20,20 +20,23 @@ ShapeArg = Union[str, ShapeSpec, Sequence[Union[DimSpec, str, int, None]]]
 
 grammar = r"""
 
-shape : dim? (" "+ dim)*
+shape : can_broadcast_dim? (" "+ can_broadcast_dim)*
       | "$" -> dollar
 
 ?expr : value_expr
       | "_" -> underscore
 
 ?value_expr : INT   -> int
-            | WORD  -> word
+            | NAME  -> word
             | math
 
+?can_broadcast_dim : dim "!" -> can_broadcast
+                   | dim
+
 ?dim : expr "*" -> repeated
-    | "*" expr -> variadic
-    | expr
-    | "..." -> ellipse
+     | "*" expr -> variadic
+     | expr
+     | "..." -> ellipse
 
 ?math : "(" " "* value_expr " "* "+" " "* value_expr " "* ")" -> add
       | "(" " "* value_expr " "* "-" " "* value_expr " "* ")" -> sub
@@ -43,8 +46,7 @@ shape : dim? (" "+ dim)*
       | "(" " "* value_expr " "* ")"
 
 %import common.INT
-%import common.WORD
-%import common.WS
+%import python.NAME
 """
 
 _parser = Lark(grammar, start="shape")
@@ -91,6 +93,11 @@ class TreeToSpec(Transformer):  # type: ignore[type-arg]
         (x,) = s
         assert isinstance(x, DimSpec)
         return x.make_variadic()
+
+    def can_broadcast(self, s: Tuple[DimSpec]) -> DimSpec:
+        (x,) = s
+        assert isinstance(x, DimSpec)
+        return x.make_can_broadcast()
 
     def ellipse(self, s: Any) -> DimSpec:
         return DimSpec(None, DimType.REPEATED)

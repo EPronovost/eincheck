@@ -157,6 +157,29 @@ TEST_CASES = [
         error="arg0: $ should not be present in the shape spec for a Tensor, "
         "got [i $ j]",
     ),
+    _TestCase(
+        [((2, 3), "i j!"), ((2, 1), "i j!")],
+        in_bindings={"j": 3},
+        out_bindings={"i": 2, "j": 3},
+    ),
+    _TestCase(
+        [((2, 3), "i *j!"), ((2, 1), "i *j!")],
+        in_bindings={"j": (3,)},
+        out_bindings={"i": 2, "j": (3,)},
+    ),
+    _TestCase(
+        [((2, 3), "*i!"), ((2, 1), "*i!"), ((1, 3), "*i!"), ((1, 1), "*i!")],
+        in_bindings={"i": (2, 3)},
+        out_bindings={"i": (2, 3)},
+    ),
+    _TestCase(
+        [((2, 4), "i (j+1)!"), ((2, 1), "i (j+1)!")],
+        in_bindings={"j": 3},
+        out_bindings={"i": 2, "j": 3},
+    ),
+    _TestCase(
+        [((2, 3), "i i!")], error="arg0 dim 1: expected can broadcast to i=2 got 3"
+    ),
 ]
 
 
