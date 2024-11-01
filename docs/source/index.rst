@@ -40,19 +40,23 @@ There are three key functions in `eincheck`, described in :ref:`API`:
 
 .. testcode::
 
-    import numpy as np
-    from eincheck import check_func
+    from typing import Any, NamedTuple
 
-    @check_func("... i, j i, j -> ... j")
-    def linear(x, m, b):
-        return (x[..., None, :] * m).sum(-1) + b
+    import numpy as np
+    import numpy.typing as npt
+    from eincheck import check_func, check_data
 
     @check_func("*x -> *x")
     def softmax(x):
         y = np.exp(x - np.max(x))
         return y / y.sum()
 
-    @check_func("n q c, n k c, n k d -> n q d, n q k")
+    @check_data(tokens="n q d", scores="n q k")
+    class AttentionOutputs(NamedTuple):
+        tokens: npt.NDArray[Any]
+        scores: npt.NDArray[Any]
+
+    @check_func("n q c, n k c, n k d -> $")
     def attention(query, key, value):
         coeffs = np.einsum("n q c, n k c -> n q k", query, key)
         weights = softmax(coeffs / np.sqrt(query.shape[-1]))
@@ -60,12 +64,11 @@ There are three key functions in `eincheck`, described in :ref:`API`:
             np.expand_dims(weights, -1) *
             np.expand_dims(value, 1)
         ).sum(2)
-        return outputs, weights
+        return AttentionOutputs(outputs, weights)
 
 .. testcode::
     :hide:
 
-    print(linear(np.random.randn(3, 4, 5), np.random.randn(6, 5), np.random.randn(6)).shape)
     out, weights = attention(
         np.random.randn(7, 4, 10),
         np.random.randn(7, 5, 10),
@@ -77,7 +80,6 @@ There are three key functions in `eincheck`, described in :ref:`API`:
 .. testoutput::
     :hide:
 
-    (3, 4, 6)
     (7, 4, 8)
     (7, 4, 5)
 
