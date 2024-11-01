@@ -97,7 +97,9 @@ def _bind_shape(
 
         g_slice = cast(Tuple[int, ...], g_slice)
 
-        if d.type is DimType.VARIADIC:
+        if d.can_broadcast:
+            pass
+        elif d.type is DimType.VARIADIC:
             bindings.setdefault(d.value.x, g_slice)
         elif d.type is DimType.REPEATED and g_slice:
             bindings.setdefault(d.value.x, g_slice[0])

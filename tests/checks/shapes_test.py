@@ -180,6 +180,12 @@ TEST_CASES = [
     _TestCase(
         [((2, 3), "i i!")], error="arg0 dim 1: expected can broadcast to i=2 got 3"
     ),
+    _TestCase(
+        [((3, 4), "*n!")], error="Unable to check: [arg0] missing variables: [n]"
+    ),
+    _TestCase(
+        [((3, 4), "3 n!")], error="Unable to check: [arg0] missing variables: [n]"
+    ),
 ]
 
 
