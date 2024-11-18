@@ -186,6 +186,8 @@ TEST_CASES = [
     _TestCase(
         [((3, 4), "3 n!")], error="Unable to check: [arg0] missing variables: [n]"
     ),
+    _TestCase([((), ".")]),
+    _TestCase([((3,), ".")], error="arg0: expected rank 0, got shape (3,)"),
 ]
 
 

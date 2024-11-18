@@ -12,3 +12,4 @@ def test_is_checkable() -> None:
     assert not create_shape_spec("i!").is_checkable({})
     assert create_shape_spec("i!").is_checkable(dict(i=7))
     assert not create_shape_spec("(i+1)!").is_checkable({})
+    assert create_shape_spec(".").is_checkable({})

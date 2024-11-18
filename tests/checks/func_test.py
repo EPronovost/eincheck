@@ -460,3 +460,16 @@ def test_output_optional(mode: DecoratorMode) -> None:
 
     foo(arr(8))
     foo(arr(9))
+
+
+def test_scalar_input_output(mode: DecoratorMode) -> None:
+    @mode.str_decorator("., . -> ., .")
+    def foo(x: Any, y: Any) -> Tuple[Any, Any]:
+        if y == 0:
+            return x + y, x * y.reshape(1, 1)
+        return x + y, x * y
+
+    foo(arr(), arr())
+
+    with raises_literal("output1: expected rank 0, got shape (1, 1)"):
+        foo(arr(), np.array(0.0))

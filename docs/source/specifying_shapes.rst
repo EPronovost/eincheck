@@ -11,6 +11,7 @@ The following sections describe this syntax.
 
     "``2``, ``i``", ":ref:`Integers and Variables`"
     "``(2 * x)``", ":ref:`Expressions`"
+    "``.``", ":ref:`Scalars`"
     "``a*``", ":ref:`Repeated Dimension Constraints`"
     "``*n``", ":ref:`Variadic Dimension Constraints`"
     "``_``, ``...``", ":ref:`Underscores and Ellipses`"
@@ -87,6 +88,25 @@ For example,
     {'n': 3, 'x': 5, 'y': 7}
     >>> check_shapes((x, "n ((2 * n) - 1)"))
     {'n': 3}
+
+Scalars
+-------
+A ``.`` can be used to specify a scalar (i.e. ``shape = ()``).
+
+.. doctest::
+
+    >>> import numpy as np
+    >>> from eincheck import check_shapes
+    >>>
+    >>> check_shapes((np.array(1.0), "."))
+    {}
+    >>> check_shapes((np.array([1.0]), "."))
+    Traceback (most recent call last):
+        ...
+    ValueError: arg0: expected rank 0, got shape (1,)
+      arg0: got (1,) expected []
+
+
 
 Repeated Dimension Constraints
 ------------------------------

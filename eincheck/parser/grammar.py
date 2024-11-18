@@ -22,6 +22,7 @@ grammar = r"""
 
 shape : can_broadcast_dim? (" "+ can_broadcast_dim)*
       | "$" -> dollar
+      | "." -> scalar
 
 ?expr : value_expr
       | "_" -> underscore
@@ -107,6 +108,9 @@ class TreeToSpec(Transformer):  # type: ignore[type-arg]
 
     def dollar(self, s: Any) -> ShapeSpec:
         return ShapeSpec([DimSpec(DataExpr())])
+
+    def scalar(self, s: Any) -> ShapeSpec:
+        return ShapeSpec([])
 
     @staticmethod
     def _get_expr(x: Any) -> Expr:
