@@ -71,6 +71,7 @@ TEST_CASES = [
     ("x!", [DimSpec.create_variable("x").make_can_broadcast()]),
     ("*y!", [DimSpec.create_variable("y").make_variadic().make_can_broadcast()]),
     ("z*!", [DimSpec.create_variable("z").make_repeated().make_can_broadcast()]),
+    (".", []),
 ]
 
 
