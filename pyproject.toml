@@ -7,6 +7,16 @@ readme = "README.md"
 license = "MIT"
 repository = "https://github.com/EPronovost/eincheck"
 documentation = "https://eincheck.readthedocs.io/en/main/"
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4"
