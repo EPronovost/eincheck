@@ -27,7 +27,7 @@ The simplest way to specify a dimension constraint is a literal integer.
 Variables can be used to capture dynamic dimensions.
 Variables can be any valid python variable name, defined by the regex ``[^\W\d]\w*``.
 
-For example, the shape spec ``"i 4 inner_dim"`` will match any 3D Tensor where the second dimension is 4, and bind ``i`` to the first dimension and ``inner`` to the last.
+For example, the shape spec ``"i 4 inner_dim"`` will match any 3D Tensor where the second dimension is 4, and bind ``i`` to the first dimension and ``inner_dim`` to the last.
 
 .. doctest::
 
