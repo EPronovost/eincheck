@@ -24,8 +24,8 @@ shape : can_broadcast_dim? (" "+ can_broadcast_dim)*
       | "$" -> dollar
       | "." -> scalar
 
-?expr : value_expr
-      | "_" -> underscore
+?expr : "_" -> underscore
+      | value_expr
 
 ?value_expr : INT   -> int
             | NAME  -> word
