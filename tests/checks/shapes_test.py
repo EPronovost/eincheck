@@ -3,8 +3,13 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import pytest
 
-from eincheck.checks.shapes import _is_broadcast_compatible, check_shapes
+from eincheck.checks.shapes import (
+    _check_dim_spec,
+    _is_broadcast_compatible,
+    check_shapes,
+)
 from eincheck.parser.dim_spec import DimSpec
+from eincheck.parser.expressions import Variable
 from eincheck.parser.grammar import ShapeArg
 from eincheck.types import ShapeVariable
 from tests.testing_utils import Dummy, raises_literal
@@ -216,6 +221,10 @@ TEST_CASES = [
     ),
     _TestCase([((), ".")]),
     _TestCase([((3,), ".")], error="arg0: expected rank 0, got shape (3,)"),
+    _TestCase(
+        [((3,), "*5")],
+        error="arg0: expected variadic DimSpec *5 to evaluate to a tuple, got 5",
+    ),
 ]
 
 
@@ -242,3 +251,29 @@ def test_simple(case: _TestCase) -> None:
     else:
         got = check_shapes(*args, **kwargs, **case.in_bindings)
         assert got == case.out_bindings
+
+
+def test_unexpected_kwarg() -> None:
+    with raises_literal("Unexpected kwarg hello"):
+        check_shapes(x="hello")  # type: ignore[arg-type]
+
+
+def test_check_dim_spec_value_none() -> None:
+    _check_dim_spec(
+        got_shape=(3,), d=DimSpec(None), bindings={}, name="t", msg="", start_idx=0
+    )
+
+
+def test_check_dim_spec_non_variadic_tuple() -> None:
+    d = DimSpec(Variable("x"))
+    with raises_literal(
+        "expected non-variadic DimSpec x to evaluate to an integer, got (1, 2)"
+    ):
+        _check_dim_spec(
+            got_shape=(3,),
+            d=d,
+            bindings={"x": (1, 2)},
+            name="t",
+            msg="",
+            start_idx=0,
+        )

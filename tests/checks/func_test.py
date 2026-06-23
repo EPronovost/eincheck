@@ -473,3 +473,18 @@ def test_scalar_input_output(mode: DecoratorMode) -> None:
 
     with raises_literal("output1: expected rank 0, got shape (1, 1)"):
         foo(arr(), np.array(0.0))
+
+
+def test_arrow_with_output_shapes() -> None:
+    with raises_literal(
+        "'->' in input_shapes should only be used when output_shapes is empty"
+    ):
+        check_func2("a b -> c d", "e f")
+
+
+def test_kwargs_function_shape_skip() -> None:
+    @check_func2({"foo": "i j"}, "")
+    def f(**kwargs: Any) -> None:
+        pass
+
+    f(foo=arr(3, 4))

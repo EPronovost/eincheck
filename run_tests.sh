@@ -11,7 +11,7 @@ else
 fi
 
 poetry run mypy "$DIR"
-poetry run pytest --cov=eincheck "$DIR"
+poetry run pytest --cov=eincheck --cov-fail-under=100 "$DIR"
 
 (
   cd "$(dirname $0)/docs"

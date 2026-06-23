@@ -128,10 +128,7 @@ def _bind_shape(
             )
         elif d.type is DimType.SINGLE:
             bindings.setdefault(d.value.x, g_slice[0])
-        else:
-            # Only reach here if d.type is REPEATED and not got_shape.
-            # Nothing to check in this case.
-            pass
+        # If d.type is REPEATED and g_slice is empty, there is nothing to bind.
 
 
 def _check_shape(

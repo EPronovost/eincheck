@@ -7,6 +7,7 @@ import pytest
 from eincheck.parser.expressions import (
     BroadcastOp,
     ConcatOp,
+    DataExpr,
     Literal,
     MulOp,
     Variable,
@@ -90,3 +91,7 @@ def test_mismatch() -> None:
 
     with raises_literal("Expected tuple for j in (i||j), got 3"):
         e2.eval(dict(i=(2,), j=3))
+
+
+def test_data_expr_variables() -> None:
+    assert DataExpr().variables == set()

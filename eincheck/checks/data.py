@@ -92,7 +92,7 @@ def _func_with_check(
 
 class DataclassWrapper(DataWrapper):
     if sys.version_info[:2] < (3, 8):
-        module_name = "dataclasses"
+        module_name = "dataclasses"  # pragma: no cover
 
     def __init__(self) -> None:
         super().__init__()
